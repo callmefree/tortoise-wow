@@ -45,13 +45,37 @@ jobs:
             vcpkg-${{ runner.os }}-
 
       - name: Install ACE via vcpkg
+        shell: powershell
         run: |
-          C:\vcpkg\vcpkg install ace --triplet x64-windows
+          $maxRetries = 3
+          for ($i = 0; $i -lt $maxRetries; $i++) {
+            C:\vcpkg\vcpkg install ace --triplet x64-windows
+            if ($LASTEXITCODE -eq 0) { break }
+            if ($i -lt $maxRetries - 1) {
+              $delay = [Math]::Pow(2, $i) * 30
+              Write-Host "ACE install failed (attempt $($i+1)). Retrying in ${delay}s..."
+              Start-Sleep -Seconds $delay
+            } else {
+              throw "ACE install failed after $maxRetries attempts"
+            }
+          }
           echo "ACE_ROOT=C:\vcpkg\installed\x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install OpenSSL & Boost via vcpkg
+        shell: powershell
         run: |
-          C:\vcpkg\vcpkg install openssl boost --triplet x64-windows
+          $maxRetries = 3
+          for ($i = 0; $i -lt $maxRetries; $i++) {
+            C:\vcpkg\vcpkg install openssl boost --triplet x64-windows
+            if ($LASTEXITCODE -eq 0) { break }
+            if ($i -lt $maxRetries - 1) {
+              $delay = [Math]::Pow(2, $i) * 30
+              Write-Host "OpenSSL/Boost install failed (attempt $($i+1)). Retrying in ${delay}s..."
+              Start-Sleep -Seconds $delay
+            } else {
+              throw "OpenSSL/Boost install failed after $maxRetries attempts"
+            }
+          }
 
       - name: Configure CMake
         shell: cmd
@@ -60,6 +84,8 @@ jobs:
             -DACE_ROOT="C:\vcpkg\installed\x64-windows" ^
             -DCMAKE_TOOLCHAIN_FILE="C:\vcpkg\scripts\buildsystems\vcpkg.cmake" ^
             -DCMAKE_PREFIX_PATH="C:\vcpkg\installed\x64-windows" ^
+            -DOPENSSL_INCLUDE_DIR="C:\vcpkg\installed\x64-windows\include" ^
+            -DOPENSSL_LIBRARIES="C:\vcpkg\installed\x64-windows\lib\libssl.lib;C:\vcpkg\installed\x64-windows\lib\libcrypto.lib" ^
             -DALLOW_TURTLE_ADDONS=ON ^
             -DBUILD_PLAYERBOTS=ON ^
             -DUSE_STD_MALLOC=ON ^

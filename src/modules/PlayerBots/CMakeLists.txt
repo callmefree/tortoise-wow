@@ -156,6 +156,19 @@ if(PCH)
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
+# Find Boost components required by playerbots (thread, filesystem, system).
+# With vcpkg toolchain, this resolves via CMAKE_PREFIX_PATH automatically.
+# Without it, BOOST_ROOT or CMAKE_PREFIX_PATH must be set manually.
+find_package(Boost QUIET COMPONENTS thread filesystem system)
+if(NOT Boost_FOUND)
+  message(WARNING
+    "Boost not found via find_package. Playerbots requires boost::thread, "
+    "boost::filesystem, and boost::system. Falling back to try find_package with "
+    "REQUIRED so the build fails early if Boost is truly absent."
+  )
+  find_package(Boost REQUIRED COMPONENTS thread filesystem system)
+endif()
+
 add_library(${LIBRARY_NAME} STATIC ${LIBRARY_SRCS})
 
 if(MSVC)
@@ -181,6 +194,10 @@ target_link_libraries(${LIBRARY_NAME}
   PRIVATE Detour
   PRIVATE g3dlite
   PRIVATE zlib
+  # Boost libraries for playerbots: thread, filesystem, system
+  PUBLIC  Boost::thread
+  PUBLIC  Boost::filesystem
+  PUBLIC  Boost::system
 )
 if(WIN32)
   target_link_libraries(${LIBRARY_NAME}

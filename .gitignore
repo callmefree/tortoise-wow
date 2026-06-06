@@ -116,6 +116,7 @@ cmangos-classic-db/
 
 # WorkBuddy
 .workbuddy/
+.workbuddy.*/
 .codegraph/
 .opencode/
 
