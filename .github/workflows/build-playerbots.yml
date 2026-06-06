@@ -1,8 +1,8 @@
-name: Build TurtleWoW
+name: Build PlayerBots
 
 on:
   push:
-    branches: [ master ]
+    branches: [ test/playerbots ]
   workflow_dispatch:
     inputs:
       build_type:
@@ -35,12 +35,12 @@ jobs:
           }
           echo "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      # 先恢复缓存再安装，避免每次冷编译
+      # 先恢复缓存再安装，避免冷编译超时
       - name: Cache vcpkg
         uses: actions/cache@v4
         with:
           path: C:\vcpkg\installed
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('.github/workflows/build.yml') }}
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('.github/workflows/build-playerbots.yml') }}
           restore-keys: |
             vcpkg-${{ runner.os }}-
 
@@ -49,12 +49,19 @@ jobs:
           C:\vcpkg\vcpkg install ace --triplet x64-windows
           echo "ACE_ROOT=C:\vcpkg\installed\x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: Install OpenSSL & Boost via vcpkg
+        run: |
+          C:\vcpkg\vcpkg install openssl boost --triplet x64-windows
+
       - name: Configure CMake
         shell: cmd
         run: |
           cmake -B build -G "Visual Studio 17 2022" -A x64 ^
             -DACE_ROOT="C:\vcpkg\installed\x64-windows" ^
+            -DCMAKE_TOOLCHAIN_FILE="C:\vcpkg\scripts\buildsystems\vcpkg.cmake" ^
+            -DCMAKE_PREFIX_PATH="C:\vcpkg\installed\x64-windows" ^
             -DALLOW_TURTLE_ADDONS=ON ^
+            -DBUILD_PLAYERBOTS=ON ^
             -DUSE_STD_MALLOC=ON ^
             -DUSE_SCRIPTS=ON ^
             -DUSE_ANTICHEAT=ON ^
@@ -68,18 +75,23 @@ jobs:
         run: |
           cmake --build build --config ${{ inputs.build_type || 'Release' }} --parallel
 
-      - name: Copy ACE.dll to output
+      - name: Copy DLLs to output
+        shell: cmd
         run: |
           copy C:\vcpkg\installed\x64-windows\bin\ACE.dll bin\${{ inputs.build_type || 'Release' }}\
+          copy C:\vcpkg\installed\x64-windows\bin\libcrypto-3-x64.dll bin\${{ inputs.build_type || 'Release' }}\
+          copy C:\vcpkg\installed\x64-windows\bin\libssl-3-x64.dll bin\${{ inputs.build_type || 'Release' }}\
 
       - name: Upload mangosd artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mangosd-${{ runner.os }}-${{ inputs.build_type || 'Release' }}
+          name: mangosd-playerbots-${{ runner.os }}-${{ inputs.build_type || 'Release' }}
           path: |
             bin/${{ inputs.build_type || 'Release' }}/mangosd.exe
             bin/${{ inputs.build_type || 'Release' }}/realmd.exe
             bin/${{ inputs.build_type || 'Release' }}/ACE.dll
+            bin/${{ inputs.build_type || 'Release' }}/libcrypto-3-x64.dll
+            bin/${{ inputs.build_type || 'Release' }}/libssl-3-x64.dll
           if-no-files-found: error
 
       - name: Upload build logs on failure
