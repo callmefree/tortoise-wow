@@ -1,3 +1,136 @@
+# ==================== 构建产物 ====================
+*.obj
+*.o
+*.a
+*.so
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.lib
+build/
+cmake-build-*/
+out/
+bin/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.pch
+Release/
+Debug/
+
+# ==================== 临时/一次性文件 ====================
+__pycache__/
+*.pyc
+*.pyo
+*.log
+logs/
+err.txt
+*.sql.bak
+*_backup/
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+Thumbs.db
+Desktop.ini
+.DS_Store
+%TEMP%/
+
+# ==================== WOW60 项目本地文件（不提交到编译仓库） ====================
+# 数据库备份
+backup_tw_*.sql
+
+# 翻译相关工作
+ai_translate_*.py
+ai_translate_batch_*.sql
+batch_translate.py
+check_translation.py
+enhance_translation.py
+export_missing_*.py
+import_rdb*.py
+import_rdb*.sql
+translate_*.py
+fix_*.py
+*_translation_check.txt
+*_check.txt
+existing_entries.txt
+*.csv
+*_progress.txt
+*_progress.sql
+*_log.txt
+*_err.txt
+*_samples.json
+*_analysis.txt
+temp_*/
+temp_*.txt
+*.tsv
+parsed_*.txt
+missing_*.sql
+run_*.bat
+merge_external_*.py
+loop_*.txt
+*.MYD
+*.MYI
+*.frm
+RDbItems*.lua
+*.json
+*.md
+quests_*.csv
+quests_*.json
+rdb_*.tsv
+_*.py
+_*.sql
+analyze_*.py
+flight_npc_analysis_report.txt
+
+# 项目文档（非主线）
+web/
+docs/
+bug fix/
+item_sql/
+superpowers-zh/
+
+# 备份和临时
+*.zip
+*.msi
+nul
+err.txt
+loop_*.txt
+translate_*.txt
+update_execution_log.txt
+temp_*.txt
+temp_mysql/
+tmp_mysql_data/
+
+# 工具
+NapCat.Shell.Windows.OneKey/
+QQ.exe
+ref-tortoise-wow/
+turtle-build-repo/
+cmangos-classic/
+cmangos-classic-db/
+
+# WorkBuddy
+.workbuddy/
+.codegraph/
+.opencode/
+
+# 大型源码目录
+源码/
+
+# Node.js
+node_modules/
+package-lock.json
+
+# 敏感文件
+*.env
+.env.local
+
+# 原 CMaNGOS 默认
 /samples/
 /data/
 /build/
