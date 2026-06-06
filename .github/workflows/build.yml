@@ -53,6 +53,7 @@ jobs:
         run: |
           cmake -B build -G "Visual Studio 17 2022" -A x64 ^
             -DACE_ROOT="C:\vcpkg\installed\x64-windows" ^
+            -DCMAKE_PREFIX_PATH="C:\vcpkg\installed\x64-windows" ^
             -DUSE_STD_MALLOC=ON ^
             -DUSE_SCRIPTS=ON ^
             -DUSE_ANTICHEAT=ON ^

@@ -603,7 +603,7 @@ if (BUILD_PLAYERBOTS)
         ${CMAKE_SOURCE_DIR}/src/shared/Util
         ${CMAKE_SOURCE_DIR}/src/framework
         ${CMAKE_SOURCE_DIR}/src/framework/Network
-        ${ACE_ROOT}
+        ${ACE_INCLUDE_DIR}
         ${BOOST_ROOT}
         ${CMAKE_SOURCE_DIR}/dep/windows/include
         ${CMAKE_SOURCE_DIR}/dep/windows/include/mysql
