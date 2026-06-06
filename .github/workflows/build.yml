@@ -2,7 +2,7 @@
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, test/playerbots ]
   workflow_dispatch:
     inputs:
       build_type:
@@ -60,6 +60,7 @@ jobs:
             -DUSE_EXTRACTORS=OFF ^
             -DUSE_LIBCURL=OFF ^
             -DUSE_TRACY=OFF ^
+            -DBUILD_PLAYERBOTS=ON ^
             -DCMAKE_CXX_FLAGS="/EHsc /wd4996 /wd4355 /wd4244 /wd4267 /MP /utf-8"
 
       - name: Build
