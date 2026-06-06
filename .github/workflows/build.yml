@@ -73,6 +73,7 @@ jobs:
           path: |
             bin/${{ inputs.build_type || 'Release' }}/mangosd.exe
             bin/${{ inputs.build_type || 'Release' }}/realmd.exe
+            C:\vcpkg\installed\x64-windows\bin\ACE.dll
           if-no-files-found: error
 
       - name: Upload build logs on failure
