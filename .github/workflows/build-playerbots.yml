@@ -3,6 +3,9 @@ name: Build PlayerBots
 on:
   push:
     branches: [ test/playerbots ]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
   workflow_dispatch:
     inputs:
       build_type:
