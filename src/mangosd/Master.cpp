@@ -192,6 +192,12 @@ static void Mangosd_WriteCrashDump(EXCEPTION_POINTERS* ep, DWORD synthCode, cons
     __except (EXCEPTION_EXECUTE_HANDLER) {}
 #endif
 
+    // Capture call stack early (before any I/O that might fail) so both
+    // the .txt and the console get the same backtrace.
+    void*  stackFrames[64] = {0};
+    USHORT frameCount = RtlCaptureStackBackTrace(0, 64, stackFrames, NULL);
+    HMODULE hExe = GetModuleHandleA(NULL);
+
     char txtFilename[512];
     snprintf(txtFilename, sizeof(txtFilename), "%s.txt", filename);
     if (FILE* tf = fopen(txtFilename, "w"))
@@ -211,7 +217,11 @@ static void Mangosd_WriteCrashDump(EXCEPTION_POINTERS* ep, DWORD synthCode, cons
             case 0xE06D7363L: fprintf(tf, " (CXX_THROW)\n"); break;
             default:          fprintf(tf, "\n"); break;
         }
-        fprintf(tf, "Exception address: 0x%p\n", ep->ExceptionRecord->ExceptionAddress);
+        fprintf(tf, "Exception address: 0x%p", ep->ExceptionRecord->ExceptionAddress);
+        if (ep->ExceptionRecord->ExceptionAddress >= hExe)
+            fprintf(tf, " (mangosd+0x%Ix)",
+                    (uintptr_t)ep->ExceptionRecord->ExceptionAddress - (uintptr_t)hExe);
+        fprintf(tf, "\n");
         if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION
             && ep->ExceptionRecord->NumberParameters >= 2)
         {
@@ -222,12 +232,40 @@ static void Mangosd_WriteCrashDump(EXCEPTION_POINTERS* ep, DWORD synthCode, cons
                     (void*)ep->ExceptionRecord->ExceptionInformation[1]);
         }
         fprintf(tf, "Crashing thread id: %lu\n", GetCurrentThreadId());
+
+        // Call stack — raw return addresses for .map triage.
+        fprintf(tf, "\nCall stack (%u frames, base=%p):\n", frameCount, hExe);
+        for (USHORT i = 0; i < frameCount; ++i)
+        {
+            if (!stackFrames[i]) continue;
+            fprintf(tf, "  #%2u: %p", i, stackFrames[i]);
+            if (stackFrames[i] >= hExe)
+                fprintf(tf, "  (mangosd+0x%Ix)",
+                        (uintptr_t)stackFrames[i] - (uintptr_t)hExe);
+            fprintf(tf, "\n");
+        }
+
         fprintf(tf, "Last SC_PHASE tag: %s\n", phaseTag);
         fprintf(tf, "Last SC_PHASE bot: %s\n", phaseBot);
         fclose(tf);
     }
 
     fprintf(stderr, "[CRASH] mangosd wrote minidump: %s (kind=%s)\n", filename, tag ? tag : "?");
+    fprintf(stderr, "[CRASH] at 0x%p", ep->ExceptionRecord->ExceptionAddress);
+    if (ep->ExceptionRecord->ExceptionAddress >= hExe)
+        fprintf(stderr, " (mangosd+0x%Ix)",
+                (uintptr_t)ep->ExceptionRecord->ExceptionAddress - (uintptr_t)hExe);
+    fprintf(stderr, "\n");
+    fprintf(stderr, "[CRASH] call stack (%u frames):\n", frameCount);
+    for (USHORT i = 0; i < frameCount; ++i)
+    {
+        if (!stackFrames[i]) continue;
+        fprintf(stderr, "  #%2u %p", i, stackFrames[i]);
+        if (stackFrames[i] >= hExe)
+            fprintf(stderr, " (mangosd+0x%Ix)",
+                    (uintptr_t)stackFrames[i] - (uintptr_t)hExe);
+        fprintf(stderr, "\n");
+    }
     fprintf(stderr, "[CRASH] last phase: %s on bot %s\n", phaseTag, phaseBot);
     sLog.outError("[CRASH] %s (code 0x%08lx). Minidump: %s",
                    tag ? tag : "Unhandled exception",
