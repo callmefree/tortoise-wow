@@ -59,6 +59,8 @@ jobs:
             -DACE_ROOT="C:\vcpkg\installed\x64-windows" ^
             -DCMAKE_TOOLCHAIN_FILE="C:\vcpkg\scripts\buildsystems\vcpkg.cmake" ^
             -DCMAKE_PREFIX_PATH="C:\vcpkg\installed\x64-windows" ^
+            -DOPENSSL_INCLUDE_DIR="C:\vcpkg\installed\x64-windows\include" ^
+            -DOPENSSL_LIBRARIES="C:\vcpkg\installed\x64-windows\lib\libssl.lib;C:\vcpkg\installed\x64-windows\lib\libcrypto.lib" ^
             -DALLOW_TURTLE_ADDONS=ON ^
             -DBUILD_PLAYERBOTS=ON ^
             -DUSE_STD_MALLOC=ON ^
