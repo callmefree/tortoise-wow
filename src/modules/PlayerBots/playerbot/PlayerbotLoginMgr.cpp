@@ -554,7 +554,10 @@ RealPlayerInfos PlayerBotLoginMgr::GetPlayerInfos(const RealPlayers& players)
 {
     RealPlayerInfos realPlayers;
     for (auto& [guid, player] : players)
-        realPlayers.push_back(player);
+    {
+        if (player)
+            realPlayers.push_back(player);
+    }
 
     return realPlayers;
 }

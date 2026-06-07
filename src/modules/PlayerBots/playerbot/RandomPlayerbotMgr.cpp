@@ -2190,7 +2190,9 @@ void RandomPlayerbotMgr::MovePlayerBot(uint32 guid, PlayerbotHolder* newHolder)
     if (!sPlayerbotAIConfig.enabled)
         return;
 
-    players[guid] = this->GetPlayerBot(guid);
+    Player* bot = this->GetPlayerBot(guid);
+    if (bot)
+        players[guid] = bot;
     PlayerbotHolder::MovePlayerBot(guid, newHolder);
 }
 
@@ -3706,7 +3708,10 @@ Player* RandomPlayerbotMgr::GetRandomPlayer()
         return NULL;
 
     uint32 index = urand(0, players.size() - 1);
-    return players[index];
+    auto it = players.begin();
+    for (uint32 i = 0; i < index; ++i)
+        ++it;
+    return it->second;
 }
 
 Player* RandomPlayerbotMgr::GetPlayer(uint32 playerGuid)
