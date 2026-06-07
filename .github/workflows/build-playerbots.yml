@@ -95,6 +95,7 @@ jobs:
             bin/${{ inputs.build_type || 'Release' }}/libcrypto-3-x64.dll
             bin/${{ inputs.build_type || 'Release' }}/libssl-3-x64.dll
             bin/${{ inputs.build_type || 'Release' }}/boost*.dll
+            bin/${{ inputs.build_type || 'Release' }}/mangosd.map
           if-no-files-found: error
 
       - name: Upload build logs on failure
