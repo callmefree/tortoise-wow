@@ -549,6 +549,13 @@ void PathInfo::createFilter()
     unsigned short includeFlags = 0x0;
     unsigned short excludeFlags = 0x0;
 
+    if (!m_sourceUnit)
+    {
+        m_filter.setIncludeFlags(includeFlags);
+        m_filter.setExcludeFlags(excludeFlags);
+        return;
+    }
+
     if (m_sourceUnit->CanWalk())
         includeFlags |= NAV_GROUND;          // walk
 
