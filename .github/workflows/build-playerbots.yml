@@ -20,6 +20,8 @@ env:
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write  # needed for pushing to build-artifacts branch
 
     steps:
       - name: Checkout
@@ -97,6 +99,29 @@ jobs:
             bin/${{ inputs.build_type || 'Release' }}/boost*.dll
             bin/${{ inputs.build_type || 'Release' }}/mangosd.map
           if-no-files-found: error
+
+      - name: Push to build-artifacts branch
+        shell: pwsh
+        run: |
+          $BIN = "bin/${{ inputs.build_type || 'Release' }}"
+          $MSG = "Build ${{ github.sha }} #${{ github.run_number }}"
+          git config user.name  "github-actions"
+          git config user.email "actions@github.com"
+          git fetch origin build-artifacts 2>$null
+          git checkout build-artifacts 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            git checkout --orphan build-artifacts
+            git rm -rf --quiet . 2>$null
+          }
+          copy "$BIN\mangosd.exe" .\ -Force
+          copy "$BIN\mangosd.map" .\ -Force
+          copy "$BIN\ACE.dll"      .\ -Force
+          copy "$BIN\libcrypto-3-x64.dll" .\ -Force
+          copy "$BIN\libssl-3-x64.dll"    .\ -Force
+          copy "$BIN\boost*.dll"   .\ -Force
+          git add mangosd.exe mangosd.map ACE.dll libcrypto-3-x64.dll libssl-3-x64.dll boost*.dll 2>$null
+          git commit -m $MSG --allow-empty
+          git push origin build-artifacts --force
 
       - name: Upload build logs on failure
         if: failure()
