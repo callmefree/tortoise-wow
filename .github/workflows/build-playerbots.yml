@@ -82,6 +82,7 @@ jobs:
           copy C:\vcpkg\installed\x64-windows\bin\ACE.dll bin\${{ inputs.build_type || 'Release' }}\
           copy C:\vcpkg\installed\x64-windows\bin\libcrypto-3-x64.dll bin\${{ inputs.build_type || 'Release' }}\
           copy C:\vcpkg\installed\x64-windows\bin\libssl-3-x64.dll bin\${{ inputs.build_type || 'Release' }}\
+          copy C:\vcpkg\installed\x64-windows\bin\boost*.dll bin\${{ inputs.build_type || 'Release' }}\
 
       - name: Upload mangosd artifact
         uses: actions/upload-artifact@v4
@@ -93,6 +94,7 @@ jobs:
             bin/${{ inputs.build_type || 'Release' }}/ACE.dll
             bin/${{ inputs.build_type || 'Release' }}/libcrypto-3-x64.dll
             bin/${{ inputs.build_type || 'Release' }}/libssl-3-x64.dll
+            bin/${{ inputs.build_type || 'Release' }}/boost*.dll
           if-no-files-found: error
 
       - name: Upload build logs on failure
