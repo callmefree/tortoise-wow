@@ -128,6 +128,24 @@ AuctionHouseObject * AuctionHouseMgr::GetAuctionsMap(AuctionHouseEntry const* ho
     return nullptr;
 }
 
+AuctionHouseObject* AuctionHouseMgr::GetAuctionsMap(uint32 type)
+{
+    // cmangos AuctionHouseType: 0=Alliance, 1=Horde, 2=Neutral
+    // Map to Turtle WoW AuctionHouseEntry houseId
+    uint32 houseId;
+    switch (type)
+    {
+        case 0: houseId = 1; break;    // Alliance (e.g. Stormwind)
+        case 1: houseId = 4; break;    // Horde   (e.g. Undercity)
+        case 2: houseId = 7; break;    // Neutral (Gadgetzan)
+        default: return nullptr;
+    }
+    AuctionHouseEntry const* houseEntry = sAuctionHouseStore.LookupEntry(houseId);
+    if (!houseEntry)
+        return nullptr;
+    return GetAuctionsMap(houseEntry);
+}
+
 uint32 AuctionHouseMgr::GetAuctionDeposit(AuctionHouseEntry const* entry, uint32 time, Item *pItem)
 {
     float deposit = float(pItem->GetProto()->SellPrice * pItem->GetCount() * (time / MIN_AUCTION_TIME));
