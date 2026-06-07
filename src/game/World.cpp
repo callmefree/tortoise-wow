@@ -2053,6 +2053,11 @@ void LoadPlayerEggLoot();
     sObjectMgr.LoadGameObjectDisplayInfoAddon();
     sCreatureLinkingMgr.LoadFromDB();
     sLog.outString("Loading object pooling data...");
+
+    // Initialize playerbot world-data caches (named locations, teleport cache,
+    // battlemasters) — MUST run after creature & gameobject spawns are loaded
+    // because PrepareTeleportCache walks in-memory world objects.
+    InitPlayerbotsWorldData();
     sPoolMgr.LoadFromDB();
     sLog.outString("Loading weather...");
     sWeatherMgr.LoadWeatherZoneChances();

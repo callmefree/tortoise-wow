@@ -910,6 +910,8 @@ class World
         void UpdatePlayerbotsTick(uint32 diff);
         // One-shot startup hook (called from World::SetInitialWorldSettings) — loads bot config + mgrs.
         void InitPlayerbotsAtStartup();
+        // Deferred world-data init hook (called after creature/gameobject spawns).
+        void InitPlayerbotsWorldData();
         uint32 GetCurrentMSTime() const;
         // GetMaxDiff: cmangos exposes max diff for performance dashboard. Stub returns 0.
         uint32 GetMaxDiff() const { return 0; }

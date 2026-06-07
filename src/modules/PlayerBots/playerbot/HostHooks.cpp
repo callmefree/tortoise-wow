@@ -96,6 +96,22 @@ void World::InitPlayerbotsAtStartup()
     sPlayerbotAIConfig.Initialize();
 }
 
+// Deferred world-data init. Called AFTER creature/gameobject spawns are
+// loaded so that PrepareTeleportCache (inside RandomPlayerbotMgr ctor) and
+// LoadNamedLocations can safely access in-memory world objects.
+// No-op when AiPlayerbot.Enabled=0.
+void World::InitPlayerbotsWorldData()
+{
+    if (!sPlayerbotAIConfig.enabled)
+        return;
+
+    sLog.outString("Loading named locations...");
+    sRandomPlayerbotMgr.LoadNamedLocations();
+
+    if (sPlayerbotAIConfig.randomBotJoinBG)
+        sRandomPlayerbotMgr.LoadBattleMastersCache();
+}
+
 // Outgoing-packet interceptor (called from WorldSession::SendPacket). For a
 // real player returns false → packet goes to the network normally. For a
 // bot Player returns true after handing the packet to the AI to react to

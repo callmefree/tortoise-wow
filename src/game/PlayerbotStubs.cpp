@@ -22,6 +22,7 @@ void Player::UpdatePlayerbotHooks(uint32)     {}
 
 void World::UpdatePlayerbotsTick(uint32)      {}
 void World::InitPlayerbotsAtStartup()         {}
+void World::InitPlayerbotsWorldData()         {}
 
 bool Player_DispatchBotOutgoingPacket(Player*, WorldPacket const&) { return false; }
 void Player_DispatchBotChatCommand(Player*, uint32, std::string const&, uint32) {}

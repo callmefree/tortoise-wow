@@ -770,12 +770,6 @@ bool PlayerbotAIConfig::Initialize()
         sTravelMgr.LoadQuestTravelTable();
     }
 
-    sLog.outString("Loading named locations...");
-    sRandomPlayerbotMgr.LoadNamedLocations();
-
-    if (sPlayerbotAIConfig.randomBotJoinBG)
-        sRandomPlayerbotMgr.LoadBattleMastersCache();
-
     sLog.outString("---------------------------------------");
     sLog.outString("        AI Playerbot initialized       ");
     sLog.outString("---------------------------------------");
