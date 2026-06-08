@@ -6,11 +6,16 @@
 namespace ai
 { 
     //Cheat class copy to hack into the loot system
+    // MUST match the real LootTemplate::LootGroup layout exactly (Penqle has an
+    // extra bool vs the cmangos original). If this struct is smaller than the
+    // real LootGroup, iterating lTemplateA->Groups with reinterpret_cast reads
+    // garbage data for the group vector fields, leading to null-pointer crashes.
     class LootLootGroupAccess                               // A set of loot definitions for items (refs are not allowed)
     {
     public:
         LootStoreItemList ExplicitlyChanced;                // Entries with chances defined in DB
         LootStoreItemList EqualChanced;                     // Zero chances - every entry takes the same chance
+        bool hasConditionalEqualChancedItem;                // MUST match LootGroup layout (see LootMgr.cpp)
     };
 
     class LootTemplateAccess
