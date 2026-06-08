@@ -798,7 +798,16 @@ int32 SpellEntry::GetDuration() const
 {
     SpellDurationEntry const *du = sSpellDurationStore.LookupEntry(DurationIndex);
     if (!du)
-        return 0;
+    {
+        // Fallback for known missing duration indices in SpellDuration.dbc
+        switch (DurationIndex)
+        {
+            case 87:    // Rip combo point duration: [8000, 0, 18000]
+                return 8000;
+            default:
+                return 0;
+        }
+    }
 
     return (du->Duration[0] == -1) ? -1 : abs(du->Duration[0]);
 }
@@ -807,7 +816,16 @@ int32 SpellEntry::GetMaxDuration() const
 {
     SpellDurationEntry const *du = sSpellDurationStore.LookupEntry(DurationIndex);
     if (!du)
-        return 0;
+    {
+        // Fallback for known missing duration indices in SpellDuration.dbc
+        switch (DurationIndex)
+        {
+            case 87:    // Rip combo point duration: [8000, 0, 18000]
+                return 18000;
+            default:
+                return 0;
+        }
+    }
     return (du->Duration[2] == -1) ? -1 : abs(du->Duration[2]);
 }
 
