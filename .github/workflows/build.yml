@@ -16,7 +16,6 @@ on:
 
 env:
   ACE_ROOT: C:\vcpkg\installed\x64-windows
-  VCPKG_ROOT: C:\vcpkg
 
 jobs:
   build:
@@ -50,18 +49,19 @@ jobs:
           echo "ACE_ROOT=C:\vcpkg\installed\x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Configure CMake
+        shell: cmd
         run: |
-          cmake -B build -G "Visual Studio 17 2022" -A x64 `
-            -DACE_ROOT="${{ env.ACE_ROOT }}" `
-            -DVCPKG_ROOT="${{ env.VCPKG_ROOT }}" `
-            -DALLOW_TURTLE_ADDONS=ON `
-            -DUSE_STD_MALLOC=ON `
-            -DUSE_SCRIPTS=ON `
-            -DUSE_ANTICHEAT=ON `
-            -DUSE_DISCORD_BOT=OFF `
-            -DUSE_EXTRACTORS=OFF `
-            -DUSE_LIBCURL=OFF `
-            -DUSE_TRACY=OFF
+          cmake -B build -G "Visual Studio 17 2022" -A x64 ^
+            -DACE_ROOT="C:\vcpkg\installed\x64-windows" ^
+            -DALLOW_TURTLE_ADDONS=ON ^
+            -DUSE_STD_MALLOC=ON ^
+            -DUSE_SCRIPTS=ON ^
+            -DUSE_ANTICHEAT=ON ^
+            -DUSE_DISCORD_BOT=OFF ^
+            -DUSE_EXTRACTORS=OFF ^
+            -DUSE_LIBCURL=OFF ^
+            -DUSE_TRACY=OFF ^
+            -DCMAKE_CXX_FLAGS="/EHsc /wd4996 /wd4355 /wd4244 /wd4267 /MP"
 
       - name: Build
         run: |
