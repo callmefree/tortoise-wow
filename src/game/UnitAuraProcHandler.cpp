@@ -786,8 +786,9 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, int3
 
                     // heal amount
                     basepoints[0] = std::max(1u, triggerAmount * damage / 100);
-                    ModifyHealth(basepoints[0]);
-                    //CastCustomSpell(this, 45419, &basepoints[0], nullptr, nullptr, true, castItem, triggeredByAura);
+                    // DealHeal sends SMSG_SPELLHEALLOG which generates visible green floating heal text
+                    // and proper combat log entries. ModifyHealth alone was invisible to players.
+                    DealHeal(this, basepoints[0], dummySpell);
                     return SPELL_AURA_PROC_OK;
                 }
             }
