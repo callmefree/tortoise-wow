@@ -51,7 +51,7 @@ jobs:
       - name: Configure CMake
         shell: cmd
         run: |
-          cmake -B build -G "Visual Studio 17 2022" -A x64 ^
+          cmake -B build -G "Visual Studio 18 2026" -A x64 ^
             -DACE_ROOT="C:\vcpkg\installed\x64-windows" ^
             -DALLOW_TURTLE_ADDONS=ON ^
             -DUSE_STD_MALLOC=ON ^
