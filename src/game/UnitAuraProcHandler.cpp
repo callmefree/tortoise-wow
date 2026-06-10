@@ -1498,6 +1498,15 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
                 if (!playerCaster)
                     return SPELL_AURA_PROC_FAILED;
 
+                // Internal cooldown to prevent AoE multitarget and rapid repeat triggers
+                if (cooldown)
+                {
+                    uint32 const spellId = auraSpellInfo->Id + UINT16_MAX;
+                    if (HasSpellCooldown(spellId))
+                        return SPELL_AURA_PROC_FAILED;
+                    AddSpellCooldown(spellId, 0, time(nullptr) + cooldown);
+                }
+
                 uint32 baseMana = playerCaster->GetCreateMana();
                 uint32 manaCost = baseMana ? uint32(baseMana * 2 / 100) : 0;
                 if (manaCost && playerCaster->GetPower(POWER_MANA) < manaCost)
