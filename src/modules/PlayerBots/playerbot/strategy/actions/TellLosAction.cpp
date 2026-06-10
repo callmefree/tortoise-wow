@@ -2,7 +2,7 @@
 #include "playerbot/playerbot.h"
 #include "TellLosAction.h"
 
-#include <boost/algorithm/string.hpp>
+#include "playerbot/StringUtils.h"
 
 using namespace ai;
 
@@ -227,7 +227,7 @@ std::vector<LosModifierStruct> TellLosAction::ParseLosModifiers(const std::strin
 
    for (std::string param : params)
    {
-      boost::trim(param);
+      StringUtils::trim(param);
 
       if (param.find(FILTER_NAME_PARAM) == 0)
       {

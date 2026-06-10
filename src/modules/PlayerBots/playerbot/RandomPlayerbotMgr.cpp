@@ -53,7 +53,7 @@ using namespace MaNGOS;
 INSTANTIATE_SINGLETON_1(RandomPlayerbotMgr);
 
 #ifdef CMANGOS
-#include <boost/thread/thread.hpp>
+#include <thread>
 #endif
 
 #ifdef MANGOS
@@ -77,7 +77,7 @@ void activatePrintStatsThread(uint32 requesterGuid)
     thread->activate();
 #endif
 #ifdef CMANGOS
-    boost::thread t(PrintStatsThread, requesterGuid);
+    std::thread t(PrintStatsThread, requesterGuid);
     t.detach();
 #endif
 }
@@ -103,7 +103,7 @@ void activateCheckBgQueueThread()
     thread->activate();
 #endif
 #ifdef CMANGOS
-    boost::thread t(CheckBgQueueThread);
+    std::thread t(CheckBgQueueThread);
     t.detach();
 #endif
 }
@@ -129,7 +129,7 @@ void activateCheckLfgQueueThread()
     thread->activate();
 #endif
 #ifdef CMANGOS
-    boost::thread t(CheckLfgQueueThread);
+    std::thread t(CheckLfgQueueThread);
     t.detach();
 #endif
 }
@@ -155,7 +155,7 @@ void activateCheckPlayersThread()
     thread->activate();
 #endif
 #ifdef CMANGOS
-    boost::thread t(CheckPlayersThread);
+    std::thread t(CheckPlayersThread);
     t.detach();
 #endif
 }
@@ -4600,7 +4600,7 @@ std::list<std::string> RandomPlayerbotMgr::HandleConsoleCleanMap(std::string par
             continue;
 
         uint32 mapId = sMapStore.LookupEntry(i)->MapID;
-        boost::thread t([mapId]() {WorldPosition::unloadMapAndVMaps(mapId); });
+        std::thread t([mapId]() {WorldPosition::unloadMapAndVMaps(mapId); });
         t.detach();
     }
 

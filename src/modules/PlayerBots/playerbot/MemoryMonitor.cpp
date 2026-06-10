@@ -4,8 +4,6 @@
 #include <time.h>
 #include "Timer.h"
 #include "Log.h"
-#define BOOST_STACKTRACE_LINK
-#include <boost/stacktrace.hpp>
 
 #if PLATFORM == PLATFORM_WINDOWS
 #include "psapi.h"
@@ -22,7 +20,7 @@ void MemoryMonitor::Add(std::string objectType, uint64_t object, int level, std:
     {
         std::ostringstream out;
         if (stack.empty())
-            out << boost::stacktrace::stacktrace();
+            out << "[stack trace unavailable]";
         else
             out << stack;
         adds[std::this_thread::get_id()][objectType][object] = make_pair(out.str(), time(0));

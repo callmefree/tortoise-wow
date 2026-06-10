@@ -6,7 +6,7 @@
 #include <numeric>
 #include <iomanip>
 #include <regex>
-#include <boost/algorithm/string.hpp>
+#include "playerbot/StringUtils.h"
 
 using namespace ai;
 
@@ -946,11 +946,11 @@ bool ChatHelper::parseable(const std::string& text)
 
 BotRoles ChatHelper::parseRole(const std::string& text)
 {
-    if (boost::iequals(text, "healer"))
+    if (StringUtils::iequals(text, "healer"))
         return BotRoles::BOT_ROLE_HEALER;
-    else if (boost::iequals(text, "tank"))
+    else if (StringUtils::iequals(text, "tank"))
         return BotRoles::BOT_ROLE_TANK;
-    else if (boost::iequals(text, "dps"))
+    else if (StringUtils::iequals(text, "dps"))
         return BotRoles::BOT_ROLE_DPS;
 
     return BotRoles::BOT_ROLE_NONE;
@@ -995,9 +995,9 @@ std::string ChatHelper::formatClass(const Player* player, int spec)
 
 uint32 ChatHelper::parseGender(const std::string& text)
 {
-    if (boost::iequals(text, "male"))
+    if (StringUtils::iequals(text, "male"))
         return GENDER_MALE;
-    else if (boost::iequals(text, "female"))
+    else if (StringUtils::iequals(text, "female"))
         return GENDER_FEMALE;
     else if (Qualified::isValidNumberString(text))
     {
@@ -1021,9 +1021,9 @@ std::string ChatHelper::formatGender(uint8 gender)
 
 Team ChatHelper::parseTeam(const std::string& text)
 {
-    if (boost::iequals(text, "alliance"))
+    if (StringUtils::iequals(text, "alliance"))
         return ALLIANCE;
-    else if (boost::iequals(text, "horde"))
+    else if (StringUtils::iequals(text, "horde"))
         return HORDE;
     else if (Qualified::isValidNumberString(text))
     {
@@ -1048,7 +1048,7 @@ std::string ChatHelper::formatTeam(Team team)
 uint32 ChatHelper::parseClass(const std::string& text)
 {
     for (auto& [classId, className] : classes)
-        if (boost::iequals(className, text))
+        if (StringUtils::iequals(className, text))
             return classId;
 
     if (Qualified::isValidNumberString(text))
@@ -1069,7 +1069,7 @@ std::string ChatHelper::formatClass(uint8 cls)
 uint32 ChatHelper::parseRace(const std::string& text)
 {
     for (auto& [raceId, raceName] : races)
-        if (boost::iequals(raceName, text))
+        if (StringUtils::iequals(raceName, text))
             return raceId;
 
     if (Qualified::isValidNumberString(text))

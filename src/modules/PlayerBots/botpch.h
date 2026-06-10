@@ -1,5 +1,18 @@
+#pragma once
+
+// Fix for Boost 1.80.0 using std::vsnprintf on MSVC
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#define _HAS_CXX17 1
+#include <cstdio>
+#if !defined(_vsnprintf)
+#define _vsnprintf vsnprintf
+#endif
+namespace std {
+    using ::vsnprintf;
+}
+#endif
+
 //add here most rarely modified headers to speed up debug build compilation
-#include "Protocol/WorldSocket.h"
 #include "Common.h"
 
 // Core game systems
@@ -41,12 +54,7 @@
 // like GuidSet, AreaTableEntry, GenericTransport).
 #include "cmangos-compat-shim.h"
 
-// Boost headers (used across multiple files)
-#include <boost/algorithm/string.hpp>
-#include <boost/functional/hash.hpp>
-#include <boost/bimap.hpp>
-#include <boost/bimap/multiset_of.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 // STL headers
 #include <stack>

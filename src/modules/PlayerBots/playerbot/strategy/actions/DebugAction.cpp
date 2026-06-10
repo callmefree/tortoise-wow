@@ -25,6 +25,7 @@
 #include "Maps/CellImpl.h"
 
 #include <iomanip>
+#include <typeindex>
 #include "SayAction.h"
 #ifdef GenerateBotTests
 #include "playerbot/strategy/tests/TestRegistry.h"

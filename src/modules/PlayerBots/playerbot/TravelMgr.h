@@ -1,7 +1,6 @@
 #pragma once
 
 #include "strategy/AiObject.h"
-#include <boost/functional/hash.hpp>
 #include "GuidPosition.h"
 #include "strategy/values/TravelValues.h"
 #include "WorldSquare.h"
@@ -500,7 +499,19 @@ namespace ai
 
 		std::vector<std::tuple<uint32, int, int>> badMmap;
 
-		std::unordered_map<std::pair<uint32, uint32>, std::vector<MapTransfer>, boost::hash<std::pair<uint32, uint32>>> mapTransfersMap;
+		struct MapKey {
+			uint32 first;
+			uint32 second;
+			bool operator==(const MapKey& other) const {
+				return first == other.first && second == other.second;
+			}
+		};
+		struct MapKeyHash {
+			size_t operator()(const MapKey& k) const {
+				return (static_cast<size_t>(k.first) << 32) | k.second;
+			}
+		};
+		std::unordered_map<MapKey, std::vector<MapTransfer>, MapKeyHash> mapTransfersMap;
 	};
 }
 

@@ -44,7 +44,7 @@
 #include "Chat/ChannelMgr.h"
 #include "PlayerbotLLMInterface.h"
 
-#include <boost/algorithm/string.hpp>
+#include "StringUtils.h"
 
 #ifdef MANGOSBOT_TWO
 #include "Entities/Vehicle.h"
@@ -1828,7 +1828,7 @@ void PlayerbotAI::HandleBotOutgoingPacket(const WorldPacket& packet)
                     if (lang == LANG_ADDON)
                         return;
 
-                    if (boost::algorithm::istarts_with(message, sPlayerbotAIConfig.toxicLinksPrefix)
+                    if (StringUtils::istarts_with(message, sPlayerbotAIConfig.toxicLinksPrefix)
                         && (GetChatHelper()->ExtractAllItemIds(message).size() > 0 || GetChatHelper()->ExtractAllQuestIds(message).size() > 0)
                         && sPlayerbotAIConfig.toxicLinksRepliesChance)
                     {
@@ -3175,7 +3175,7 @@ bool PlayerbotAI::SayToGeneral(std::string msg)
     {
         //check for current zone
         if (channel && channel->GetChannelId() == ChatChannelId::GENERAL
-            && boost::algorithm::contains(channel->GetName(), GetLocalizedAreaName(current_zone)))
+            && StringUtils::icontains(channel->GetName(), GetLocalizedAreaName(current_zone)))
         {
             channel->Say(bot, msg.c_str(), LANG_UNIVERSAL);
             return true;
@@ -3215,7 +3215,7 @@ bool PlayerbotAI::SayToTrade(std::string msg)
     for (auto const& [key, channel] : cMgr->GetChannels())
     {
         if (channel && channel->GetChannelId() == ChatChannelId::TRADE
-            && boost::algorithm::contains(channel->GetName(), GetLocalizedAreaName(GetAreaEntryByAreaID(ImportantAreaId::CITY))))
+            && StringUtils::icontains(channel->GetName(), GetLocalizedAreaName(GetAreaEntryByAreaID(ImportantAreaId::CITY))))
         {
             channel->Say(bot, msg.c_str(), LANG_UNIVERSAL);
             return true;
@@ -3281,7 +3281,7 @@ bool PlayerbotAI::SayToLocalDefense(std::string msg)
     {
         //check for current zone
         if (channel && channel->GetChannelId() == ChatChannelId::LOCAL_DEFENSE
-            && boost::algorithm::contains(channel->GetName(), GetLocalizedAreaName(current_zone)))
+            && StringUtils::icontains(channel->GetName(), GetLocalizedAreaName(current_zone)))
         {
             channel->Say(bot, msg.c_str(), LANG_UNIVERSAL);
             return true;
@@ -3355,7 +3355,7 @@ bool PlayerbotAI::SayToGuildRecruitment(std::string msg)
     {
         //check for current zone (can only be used in major cities)
         if (channel && channel->GetChannelId() == ChatChannelId::GUILD_RECRUITMENT
-            && boost::algorithm::contains(channel->GetName(), GetLocalizedAreaName(GetAreaEntryByAreaID(ImportantAreaId::CITY))))
+            && StringUtils::icontains(channel->GetName(), GetLocalizedAreaName(GetAreaEntryByAreaID(ImportantAreaId::CITY))))
         {
             channel->Say(bot, msg.c_str(), LANG_UNIVERSAL);
             return true;

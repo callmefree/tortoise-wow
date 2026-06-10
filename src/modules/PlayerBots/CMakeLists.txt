@@ -156,17 +156,12 @@ if(PCH)
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
-# Find Boost components required by playerbots (thread, filesystem, system).
-# With vcpkg toolchain, this resolves via CMAKE_PREFIX_PATH automatically.
-# Without it, BOOST_ROOT or CMAKE_PREFIX_PATH must be set manually.
-find_package(Boost QUIET COMPONENTS thread filesystem system)
-if(NOT Boost_FOUND)
-  message(WARNING
-    "Boost not found via find_package. Playerbots requires boost::thread, "
-    "boost::filesystem, and boost::system. Falling back to try find_package with "
-    "REQUIRED so the build fails early if Boost is truly absent."
+# Platform-specific include directories (Windows)
+if(WIN32)
+  include_directories(
+    ${MYSQL_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/dep/windows/include
   )
-  find_package(Boost REQUIRED COMPONENTS thread filesystem system)
 endif()
 
 add_library(${LIBRARY_NAME} STATIC ${LIBRARY_SRCS})
@@ -194,10 +189,6 @@ target_link_libraries(${LIBRARY_NAME}
   PRIVATE Detour
   PRIVATE g3dlite
   PRIVATE zlib
-  # Boost libraries for playerbots: thread, filesystem, system
-  PUBLIC  Boost::thread
-  PUBLIC  Boost::filesystem
-  PUBLIC  Boost::system
 )
 if(WIN32)
   target_link_libraries(${LIBRARY_NAME}
@@ -205,6 +196,7 @@ if(WIN32)
   )
 endif()
 
+# std::filesystem is automatically linked in MSVC
 target_include_directories(${LIBRARY_NAME}
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
   # include paths for transitive Penqle headers
@@ -212,10 +204,45 @@ target_include_directories(${LIBRARY_NAME}
   PRIVATE ${CMAKE_SOURCE_DIR}/src/game/MapNodes
   PRIVATE ${CMAKE_SOURCE_DIR}/dep/recastnavigation
   PRIVATE ${CMAKE_SOURCE_DIR}/src/framework/Network
+  # Additional include paths for game headers
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/shared
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/framework
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Database
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Spells
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/AI
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/AuctionHouse
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Battlegrounds
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Chat
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Commands
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Group
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Guild
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Handlers
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/LFG
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Mail
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Maps
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Maps/Pool
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Movement
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Movement/spline
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Objects
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/OutdoorPvP
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/PacketBroadcast
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Protocol
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Threat
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/Transports
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/game/vmap
+  PRIVATE ${CMAKE_SOURCE_DIR}/src/scripts
+  PRIVATE ${CMAKE_SOURCE_DIR}/dep/include/g3dlite
+  # cmangos-compat-stubs directory for compatibility headers
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/cmangos-compat-stubs
+  # ACE library include path (must be last to avoid conflicts with <version> header)
+  PRIVATE ${ACE_INCLUDE_DIR}
 )
 
+
+
 # Install config files
-if ( ${CMAKE_PROJECT_NAME} MATCHES "Classic")
+if ( ${CMAKE_PROJECT_NAME} MATCHES "TurtleWoW")
 	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/playerbot/aiplayerbot.conf.dist.in ${CMAKE_CURRENT_BINARY_DIR}/aiplayerbot.conf.dist)
 endif()	
 if ( ${CMAKE_PROJECT_NAME} MATCHES "TBC")

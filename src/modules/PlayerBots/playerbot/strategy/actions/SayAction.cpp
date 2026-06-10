@@ -6,7 +6,7 @@
 #include "playerbot/ServerFacade.h"
 #include "playerbot/AiFactory.h"
 #include <regex>
-#include <boost/algorithm/string.hpp>
+#include "playerbot/StringUtils.h"
 #include "playerbot/PlayerbotLLMInterface.h"
 
 using namespace ai;
@@ -482,20 +482,20 @@ void ChatReplyAction::ChatReplyDo(Player* bot, uint32 type, uint32 guid1, uint32
 
     ChatChannelSource chatChannelSource = bot->GetPlayerbotAI()->GetChatChannelSource(bot, type, chanName);
 
-    if ((boost::algorithm::istarts_with(msg, "LFG") || boost::algorithm::istarts_with(msg, "LFM"))
+    if ((StringUtils::istarts_with(msg, "LFG") || StringUtils::istarts_with(msg, "LFM"))
         && HandleLFGQuestsReply(bot, chatChannelSource, msg, name))
     {
         return;
     }
 
-    if ((boost::algorithm::istarts_with(msg, "WTB"))
+    if ((StringUtils::istarts_with(msg, "WTB"))
         && HandleWTBItemsReply(bot, chatChannelSource, msg, name))
     {
         return;
     }
 
     //toxic links
-    if (boost::algorithm::istarts_with(msg, sPlayerbotAIConfig.toxicLinksPrefix)
+    if (StringUtils::istarts_with(msg, sPlayerbotAIConfig.toxicLinksPrefix)
         && (bot->GetPlayerbotAI()->GetChatHelper()->ExtractAllItemIds(msg).size() > 0 || bot->GetPlayerbotAI()->GetChatHelper()->ExtractAllQuestIds(msg).size() > 0))
     {
         HandleToxicLinksReply(bot, chatChannelSource, msg, name);

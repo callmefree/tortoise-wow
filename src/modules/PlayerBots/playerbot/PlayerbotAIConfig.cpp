@@ -14,7 +14,7 @@
 #include <iostream>
 #include <numeric>
 #include <iomanip>
-#include <boost/algorithm/string.hpp>
+#include "playerbot/StringUtils.h"
 #include <regex>
 #include <fstream>
 #include <sstream>
@@ -1165,7 +1165,7 @@ void PlayerbotAIConfig::LoadTalentSpecs()
 
                         std::string glyphList = config.GetStringDefault(os.str().c_str(), "");
                         glyphList = glyphList.substr(0, glyphList.find("#", 0));
-                        boost::trim_right(glyphList);
+                        StringUtils::trim_right(glyphList);
 
                         if (!glyphList.empty())
                         {
@@ -1237,7 +1237,7 @@ void PlayerbotAIConfig::LoadLLMDefaultPrompts(const std::string& fileName)
 
     while (std::getline(file, line))
     {
-        boost::trim(line);
+        StringUtils::trim(line);
         if (line.empty() || line.front() == '#')
             continue;
 
@@ -1250,8 +1250,8 @@ void PlayerbotAIConfig::LoadLLMDefaultPrompts(const std::string& fileName)
 
         std::string name = line.substr(0, delim);
         std::string text = line.substr(delim + 2);
-        boost::trim(name);
-        boost::trim(text);
+        StringUtils::trim(name);
+        StringUtils::trim(text);
 
         if (name.empty())
         {

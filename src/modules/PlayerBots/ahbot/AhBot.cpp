@@ -19,7 +19,7 @@
 #include "Util.h"
 
 #ifdef CMANGOS
-#include <boost/thread/thread.hpp>
+#include <thread>
 #endif
 
 using namespace ahbot;
@@ -84,7 +84,7 @@ void activateAhbotThread()
     thread->activate();
 #endif
 #ifdef CMANGOS
-    boost::thread t(AhbotThread);
+    std::thread t(AhbotThread);
     t.detach();
 #endif
 }

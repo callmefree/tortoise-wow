@@ -18,6 +18,7 @@
 
 # CMake policies
 cmake_minimum_required(VERSION 3.1...3.29)
+cmake_policy(SET CMP0167 OLD)
 
 project(TurtleWoW)
 include(FetchContent)
@@ -46,11 +47,11 @@ option(USE_ADDRESS_SANITIZER "Enable clang address sanitizer - debug feature tha
 option(ENABLE_PROFILING "(Windows only) Enable Optick integration, which allows to profile CPU and Memory. Also disabling some async code" OFF)
 option(ENABLE_LSAN "Enables Leak Sanitizer" OFF)
 # Allow enabling official Turtle addon support
-option(ALLOW_TURTLE_ADDONS "Allow Turtle addons" OFF)
+option(ALLOW_TURTLE_ADDONS "Allow Turtle addons" ON)
 # Build cmangos/playerbots — bot AI vendored under src/modules/PlayerBots/.
 # When ON, mangosd links the bot subsystem; runtime activation is gated by
 # AiPlayerbot.Enabled in aiplayerbot.conf.
-option(BUILD_PLAYERBOTS "Build the cmangos/playerbots subsystem" OFF)
+option(BUILD_PLAYERBOTS "Build the cmangos/playerbots subsystem" ON)
 
 
 if(UNIX)
@@ -537,6 +538,7 @@ set(DEFINITIONS
 if(WIN32)
   set(DEFINITIONS ${DEFINITIONS} WIN32 _WIN32)
   set(DEFINITIONS ${DEFINITIONS} _CRT_SECURE_NO_WARNINGS)
+  set(DEFINITIONS ${DEFINITIONS} _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING)
 else()
   set(DEFINITIONS ${DEFINITIONS} SYSCONFDIR="${CONF_DIR}/")
 endif()
@@ -578,45 +580,6 @@ if (BUILD_PLAYERBOTS)
     #   ENABLE_PLAYERBOTS - turns the subsystem on inside the vendor tree's
     #                       own ifdef walls.
     target_compile_definitions(playerbots PRIVATE CMANGOS MANGOSBOT_ZERO ENABLE_PLAYERBOTS)
-    target_include_directories(playerbots PUBLIC
-        ${CMAKE_SOURCE_DIR}/src/modules/PlayerBots/cmangos-compat-stubs
-        ${CMAKE_SOURCE_DIR}/src/game
-        ${CMAKE_SOURCE_DIR}/src/game/AI
-        ${CMAKE_SOURCE_DIR}/src/game/AuctionHouse
-        ${CMAKE_SOURCE_DIR}/src/game/Battlegrounds
-        ${CMAKE_SOURCE_DIR}/src/game/Chat
-        ${CMAKE_SOURCE_DIR}/src/game/Commands
-        ${CMAKE_SOURCE_DIR}/src/game/Database
-        ${CMAKE_SOURCE_DIR}/src/game/Group
-        ${CMAKE_SOURCE_DIR}/src/game/Guild
-        ${CMAKE_SOURCE_DIR}/src/game/Handlers
-        ${CMAKE_SOURCE_DIR}/src/game/LFG
-        ${CMAKE_SOURCE_DIR}/src/game/Mail
-        ${CMAKE_SOURCE_DIR}/src/game/Maps
-        ${CMAKE_SOURCE_DIR}/src/game/Maps/Pool
-        ${CMAKE_SOURCE_DIR}/src/game/Movement
-        ${CMAKE_SOURCE_DIR}/src/game/Movement/spline
-        ${CMAKE_SOURCE_DIR}/src/game/Objects
-        ${CMAKE_SOURCE_DIR}/src/game/OutdoorPvP
-        ${CMAKE_SOURCE_DIR}/src/game/PacketBroadcast
-        ${CMAKE_SOURCE_DIR}/src/game/Protocol
-        ${CMAKE_SOURCE_DIR}/src/game/Spells
-        ${CMAKE_SOURCE_DIR}/src/game/Threat
-        ${CMAKE_SOURCE_DIR}/src/game/Transports
-        ${CMAKE_SOURCE_DIR}/src/game/vmap
-        ${CMAKE_SOURCE_DIR}/src/shared
-        ${CMAKE_SOURCE_DIR}/src/shared/Config
-        ${CMAKE_SOURCE_DIR}/src/shared/Database
-        ${CMAKE_SOURCE_DIR}/src/shared/Log
-        ${CMAKE_SOURCE_DIR}/src/shared/Util
-        ${CMAKE_SOURCE_DIR}/src/framework
-        ${CMAKE_SOURCE_DIR}/src/framework/Network
-        ${ACE_INCLUDE_DIR}
-        ${BOOST_ROOT}
-        ${CMAKE_SOURCE_DIR}/dep/windows/include
-        ${CMAKE_SOURCE_DIR}/dep/windows/include/mysql
-        ${CMAKE_SOURCE_DIR}/dep/include/g3dlite
-    )
 endif()
 
 if (USE_EXTRACTORS OR USE_REALMMERGE)

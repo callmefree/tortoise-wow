@@ -2778,7 +2778,7 @@ void TravelMgr::AddMapTransfer(WorldPosition start, WorldPosition end, float por
         }
 
     //Add actual transfer.
-    auto mapTransfers = mapTransfersMap.find(std::make_pair(start.getMapId(), end.getMapId()));
+    auto mapTransfers = mapTransfersMap.find({ start.getMapId(), end.getMapId() });
     
     if (mapTransfers == mapTransfersMap.end())
         mapTransfersMap.insert({ { sMap, eMap }, {MapTransfer(start, end, portalDistance)} });
