@@ -1064,6 +1064,10 @@ class Creature : public Unit
         bool CallsForHelp() const;
         void SetCallsForHelp(bool callsForHelp);
 
+        // AutoScaler: dynamic spell damage scaling factor (default 1.0f)
+        float GetAutoScalerDamageFactor() const { return m_autoScalerDamageFactor; }
+        void SetAutoScalerDamageFactor(float factor) { m_autoScalerDamageFactor = factor; }
+
     protected:
         bool MeetsSelectAttackingRequirement(Unit* pTarget, SpellEntry const* pSpellInfo, uint32 selectFlags) const;
 
@@ -1138,6 +1142,7 @@ class Creature : public Unit
         uint32_t m_lootIdOverride = 0;
 
     private:
+        float m_autoScalerDamageFactor = 1.0f;
         GridReference<Creature> m_gridRef;
         CreatureInfo const* m_creatureInfo;
 };
