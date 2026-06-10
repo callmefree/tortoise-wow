@@ -153,6 +153,9 @@ void AutoScaler::ScaleCreature(Creature* creature, uint32 playerCount, uint32 ma
     creature->UpdateDamagePhysical(BASE_ATTACK);
     creature->UpdateDamagePhysical(OFF_ATTACK);
     creature->UpdateDamagePhysical(RANGED_ATTACK);
+
+    // Store spell damage scaling factor (same as physical damage)
+    creature->SetAutoScalerDamageFactor(damageScaleFactor);
 }
 
 void AutoScaler::GenerateScaledMoneyLoot(Creature* creature, Loot* loot)

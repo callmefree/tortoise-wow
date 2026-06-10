@@ -4787,7 +4787,11 @@ uint32 WorldObject::SpellDamageBonusDone(Unit* pVictim, SpellEntry const* spellP
 
     // Creature damage
     if (GetTypeId() == TYPEID_UNIT && !((Creature*)this)->IsPet())
+    {
         DoneTotalMod *= Creature::_GetSpellDamageMod(((Creature*)this)->GetCreatureInfo()->rank);
+        // Apply AutoScaler dynamic scaling factor (same factor as physical damage)
+        DoneTotalMod *= static_cast<Creature*>(this)->GetAutoScalerDamageFactor();
+    }
 
     if (pUnit)
     {

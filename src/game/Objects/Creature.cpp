@@ -3379,6 +3379,7 @@ void Creature::ResetStats()
         SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, m_creatureInfo->dmg_max);
         UpdateDamagePhysical(BASE_ATTACK);
     }
+    m_autoScalerDamageFactor = 1.0f;
     RemoveAllAuras();
 }
 
