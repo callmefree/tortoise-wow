@@ -1168,6 +1168,84 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, int3
                     triggered_spell_id = 28848;
                     break;
                 }
+                // Carnage (Talent)
+                case 16998:
+                case 16999:
+                {
+                    if (!procSpell || !pVictim || !pVictim->IsAlive())
+                        return SPELL_AURA_PROC_FAILED;
+
+                    // Part 1: Maul, Swipe, Savage Bite → heal for triggerAmount% of damage
+                    if (procSpell->IsFitToFamilyMask<CF_DRUID_MAUL_SWIPE>() ||
+                        procSpell->IsFitToFamilyMask<CF_DRUID_SAVAGE_BITE>())
+                    {
+                        if (damage <= 0)
+                            return SPELL_AURA_PROC_FAILED;
+
+                        int32 healAmount = int32(damage * (triggerAmount + 1) / 100);
+                        if (healAmount <= 0)
+                            return SPELL_AURA_PROC_FAILED;
+
+                        // DealHeal sends SMSG_SPELLHEALLOG (green floating heal text + combat log)
+                        DealHeal(this, healAmount, dummySpell);
+                        return SPELL_AURA_PROC_OK;
+                    }
+
+                    // Part 2: Ferocious Bite → chance to refresh Rake/Rip and add combo point
+                    if (procSpell->IsFitToFamilyMask<CF_DRUID_RIP_BITE>() &&
+                        procSpell->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_SCHOOL_DAMAGE)
+                    {
+                        Player* plr = ToPlayer();
+                        if (!plr)
+                            return SPELL_AURA_PROC_FAILED;
+
+                        // Get the chance per combo point from EffectPointsPerComboPoint[2]
+                        float chancePerCp = dummySpell->EffectPointsPerComboPoint[EFFECT_INDEX_2];
+                        if (chancePerCp <= 0.0f)
+                            return SPELL_AURA_PROC_FAILED;
+
+                        uint8 cp = plr->GetComboPoints();
+                        if (cp == 0)
+                            return SPELL_AURA_PROC_FAILED;
+
+                        // Roll chance for each combo point (once per CP)
+                        bool refresh = false;
+                        for (uint8 i = 0; i < cp; ++i)
+                        {
+                            if (roll_chance_f(chancePerCp))
+                            {
+                                refresh = true;
+                                break;
+                            }
+                        }
+
+                        if (!refresh)
+                            return SPELL_AURA_PROC_FAILED;
+
+                        // Refresh Rake and Rip auras on the target
+                        Unit::SpellAuraHolderMap const& holderMap = pVictim->GetSpellAuraHolderMap();
+                        for (auto itr = holderMap.begin(); itr != holderMap.end(); ++itr)
+                        {
+                            SpellEntry const* auraProto = itr->second->GetSpellProto();
+                            if (!auraProto || auraProto->SpellFamilyName != SPELLFAMILY_DRUID)
+                                continue;
+
+                            // Rake uses CF_DRUID_RAKE_CLAW
+                            if (auraProto->IsFitToFamilyMask<CF_DRUID_RAKE_CLAW>())
+                                itr->second->RefreshHolder();
+                            // Rip uses CF_DRUID_RIP_BITE + periodic damage aura
+                            else if (auraProto->IsFitToFamilyMask<CF_DRUID_RIP_BITE>() &&
+                                     auraProto->EffectApplyAuraName[EFFECT_INDEX_0] == SPELL_AURA_PERIODIC_DAMAGE)
+                                itr->second->RefreshHolder();
+                        }
+
+                        // Add one extra combo point (capped at max)
+                        plr->AddComboPoints(pVictim, 1);
+                        return SPELL_AURA_PROC_OK;
+                    }
+
+                    return SPELL_AURA_PROC_FAILED;
+                }
             }
             break;
         }

@@ -347,7 +347,7 @@ DELETE FROM spell_affect
 WHERE (entry = 16998 AND effectId = 0) OR
     (entry = 16999 AND effectId = 0);
 
--- Carnage proc event
+-- Carnage proc event (updated mask: Maul/Swipe=bit11, Rip/FerociousBite=bit23, SavageBite=CM1bit5)
 REPLACE INTO spell_proc_event
 (
     entry,
@@ -363,8 +363,39 @@ REPLACE INTO spell_proc_event
     Cooldown
 )
 VALUES
-(16998, 0, 7, 137438959616, 0, 0, 16, 0, 0, 0, 0),
-(16999, 0, 7, 137438959616, 0, 0, 16, 0, 0, 0, 0);
+(16998, 0, 7, 8390656, 32, 0, 16, 0, 0, 0, 0),
+(16999, 0, 7, 8390656, 32, 0, 16, 0, 0, 0, 0);
+
+-- Carnage spell_effect_mod: change aura from PROC_TRIGGER_SPELL (42) to DUMMY (4)
+REPLACE INTO spell_effect_mod
+(
+    Id,
+    EffectIndex,
+    Effect,
+    EffectDieSides,
+    EffectBaseDice,
+    EffectDicePerLevel,
+    EffectRealPointsPerLevel,
+    EffectBasePoints,
+    EffectAmplitude,
+    EffectPointsPerComboPoint,
+    EffectChainTarget,
+    EffectMultipleValue,
+    EffectMechanic,
+    EffectImplicitTargetA,
+    EffectImplicitTargetB,
+    EffectRadiusIndex,
+    EffectApplyAuraName,
+    EffectItemType,
+    EffectMiscValue,
+    EffectTriggerSpell,
+    Comment
+)
+VALUES
+(16998, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, -1, -1, -1, 'Carnage R1: PROC_TRIGGER_SPELL -> DUMMY'),
+(16999, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, -1, -1, -1, 'Carnage R2: PROC_TRIGGER_SPELL -> DUMMY'),
+(16998, 1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 'Carnage R1: Disable broken effect 1 (aura 109)'),
+(16999, 1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 'Carnage R2: Disable broken effect 1 (aura 109)');
 
 -- ==============================================
 -- FILE: dark-harvest-cooldown.sql
