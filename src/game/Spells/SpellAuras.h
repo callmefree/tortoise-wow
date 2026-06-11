@@ -426,6 +426,8 @@ class Aura
         void HandleAuraModRangedAttackPowerPercent(bool apply, bool Real);
         void HandleAuraModAttackPowerOfPartyFlat(bool Apply, bool Real);
         void HandleAuraModAttackPowerOfPartyPct(bool apply, bool Real);
+        void HandleAuraPetAttackPowerFromRangedAP(bool Apply, bool Real);
+        void HandleAuraPetSpellPowerFromRangedAP(bool Apply, bool Real);
         void HandleSpiritOfRedemption(bool apply, bool Real);
         void HandleAuraAoeCharm(bool apply, bool real);
         void HandleShieldBlockValue(bool apply, bool Real);
