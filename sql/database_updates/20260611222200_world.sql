@@ -1,27 +1,24 @@
--- ================================================================
--- 野兽戒律 (Bestial Discipline) v2 完整修复
--- Bug: ID 19590/19592 的 Effect 1 (集中值回复) 因 aura 类型错误完全无效
---      且缺少 spell_affect 掩码导致 Effect 2 (CD减免) 无法匹配技能
---      v1 改用 PERIODIC_ENERGIZE+CASTER_PET 但 aura 无法持久化
--- 修复(v2): Effect 1 改用 DUMMY aura 在玩家身上，通过 PetAura 系统
---        (spell_pet_auras) 触发新法术 36000/36001 在宠物身上施加
---        PERIODIC_ENERGIZE，宠物召唤/复活时自动重新施加
--- 日期: 2026-06-11 (v2)
--- ================================================================
+-- ==============================================
+-- FILE: 20260611222200_world.sql
+-- Fix: 野兽戒律 Bestial Discipline (19590/19592)
+--      集中值回复效果持久化
+-- ==============================================
+--
+-- 问题分析：
+-- 之前的修复将 Effect 1 设为 PERIODIC_ENERGIZE 通过
+-- TARGET_UNIT_CASTER_PET 直接施放到宠物身上。但 Pet::_SaveAuras
+-- 过滤了所有 TARGET_UNIT_CASTER_PET 的 aura，且 spell 不在
+-- spell_pet_auras 表中，导致宠物下线重登/死亡复活后 aura 永久丢失。
+--
+-- 修复方式：
+-- Effect 1 改为 DUMMY aura (4) 作用在玩家身上(CASTER)，
+-- 通过 spell_pet_auras 表映射到新法术 36000/36001，
+-- PetAura 系统在宠物召唤/复活时自动重新施加 PERIODIC_ENERGIZE。
+--
+-- 触发: .reload spell_pet_auras
+-- 然后需要重启 mangosd (spell_template 和 spell_affect 修改需要重启)
 
--- 备份
-CREATE TABLE IF NOT EXISTS _backup_bestial_20260610
-SELECT * FROM spell_template WHERE entry IN (19590, 19592);
-CREATE TABLE IF NOT EXISTS _backup_bestial_persistence_20260611
-SELECT * FROM spell_template WHERE entry IN (19590, 19592);
-
--- Effect 1: 集中值回复 (v2 - PetAura 持久化方案)
--- v1: effectApplyAuraName1=24(PERIODIC_ENERGIZE), target=5(CASTER_PET)
---     问题: _SaveAuras 过滤 TARGET_UNIT_CASTER_PET, 不在 spell_pet_auras
---           → aura 无法持久化
--- v2: effectApplyAuraName1=4(SPELL_AURA_DUMMY), target=1(CASTER)
---     DUMMY aura 在玩家身上 → HandleAuraDummy 调用 PetAura 系统
---     → 36000/36001 在宠物召唤/复活时自动施加
+-- Step 1: 修改 Bestial Discipline Effect 1 为 DUMMY
 UPDATE spell_template SET
   effectApplyAuraName1 = 4,
   effectImplicitTargetA1 = 1,
@@ -30,25 +27,7 @@ UPDATE spell_template SET
   effectBasePoints1 = 0
 WHERE entry IN (19590, 19592);
 
--- Effect 2: 宠物特殊技能冷却时间减少
--- miscvalue2 = 11(SPELLMOD_COOLDOWN) 已在数据库中正确，无需改
--- 缺少 spell_affect 掩码导致修饰器无法匹配任何技能
--- mask = 0x18000000000 = 1649267441664
--- v1 误用了 0x1800000000(bits 35+36) → 命中 Steady Shot/Piercing Shots 而不是宠技
--- v3 修正: 0x18000000000(bits 39+40) → 覆盖 HUNTER 族宠物技能
--- Bit 40(0x10000000000): Bite, Claw, Screech, Lightning Breath, Thunderstomp etc.
--- Bit 39(0x8000000000): Scorpid Poison, Prowl, Furious Howl, Shell Shield etc.
--- 注: Claw/Growl 的技能族为 ROGUE(7)，此修饰器(族=9)无法跨族匹配
-
-INSERT INTO spell_affect (entry, effectId, SpellFamilyMask)
-VALUES
-  (19590, 1, 1649267441664),   -- 0x18000000000
-  (19592, 1, 1649267441664)
-ON DUPLICATE KEY UPDATE SpellFamilyMask = VALUES(SpellFamilyMask);
-
--- Effect 2: 宠物特殊技能冷却时间减少保留 (已有 spell_affect 掩码)
-
--- 创建 PetAura 子法术 36000 (Rank1: +2 focus/tick)
+-- Step 2: 创建 PetAura 子法术 36000 (Rank1: +2 focus)
 INSERT INTO spell_template (
   entry, school, category, castUI, dispel, mechanic,
   attributes, attributesEx, attributesEx2, attributesEx3, attributesEx4,
@@ -117,7 +96,7 @@ SELECT
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0
 FROM spell_template WHERE entry = 19590;
 
--- 创建 PetAura 子法术 36001 (Rank2: +5 focus/tick)
+-- Step 3: 创建 PetAura 子法术 36001 (Rank2: +5 focus)
 INSERT INTO spell_template (
   entry, attributes, castingTimeIndex, durationIndex, rangeIndex,
   procChance, effect1, effectDieSides1, effectBaseDice1, effectBasePoints1,
@@ -135,31 +114,13 @@ INSERT INTO spell_template (
   1, -1
 );
 
--- 添加 spell_pet_auras 映射
+-- Step 4: 添加 spell_pet_auras 映射
 REPLACE INTO spell_pet_auras (spell, pet, aura) VALUES
 (19590, 0, 36000),
 (19592, 0, 36001);
 
--- 验证
-SELECT '=== v2 Fix applied ===' AS status;
-SELECT entry,
-  effectApplyAuraName1 AS aura1,
-  effectImplicitTargetA1 AS target1,
-  effectMiscValue1 AS misc1,
-  effectAmplitude1 AS ampl1,
-  effectBasePoints1 AS base1
-FROM spell_template WHERE entry IN (19590, 19592);
-
-SELECT '=== New pet aura spells ===' AS '';
-SELECT entry,
-  effectApplyAuraName1 AS aura,
-  effectImplicitTargetA1 AS target,
-  effectBasePoints1 AS base,
-  effectAmplitude1 AS ampl,
-  effectMiscValue1 AS misc
-FROM spell_template WHERE entry IN (36000, 36001);
-
-SELECT '=== spell_pet_auras ===' AS '';
-SELECT * FROM spell_pet_auras WHERE spell IN (19590, 19592);
-
-SELECT * FROM spell_affect WHERE entry IN (19590, 19592);
+-- Step 5: 修正 spell_affect 掩码 (bugfix: v1 误用 0x1800000000 bits 35+36)
+-- 原值 103079215104(0x1800000000) 命中了 Steady Shot/Piercing Shots 而不是宠技
+-- 修正为 1649267441664(0x18000000000 bits 39+40) 对应 Bite/Claw/Scorpid Poison 等
+UPDATE spell_affect SET SpellFamilyMask = 1649267441664
+WHERE entry IN (19590, 19592);
