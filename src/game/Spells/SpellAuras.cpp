@@ -287,8 +287,8 @@ pAuraHandler AuraHandler[TOTAL_AURAS] =
     &Aura::HandleNoImmediateEffect,                         //218 SPELL_AURA_TRIGGER_SPELL_ON_FULL_CHANNEL
     &Aura::HandleUnused,                                    //219 SPELL_AURA_219_UNUSED
     &Aura::HandleNoImmediateEffect,                         //220 SPELL_AURA_MOD_DAMAGE_TAKEN_FROM_PET_PCT
-    &Aura::HandleNoImmediateEffect,                         //221 SPELL_AURA_MOD_ATTACK_POWER_OF_PARTY_FLAT
-    &Aura::HandleNoImmediateEffect,                         //222 SPELL_AURA_MOD_ATTACK_POWER_OF_PARTY_PCT
+    &Aura::HandleAuraModAttackPowerOfPartyFlat,             //221 SPELL_AURA_MOD_ATTACK_POWER_OF_PARTY_FLAT
+    &Aura::HandleAuraModAttackPowerOfPartyPct,              //222 SPELL_AURA_MOD_ATTACK_POWER_OF_PARTY_PCT
     &Aura::HandleNoImmediateEffect,                         //223 SPELL_AURA_MOD_EQUIPPED_ITEM_PROC_CHANCE_PCT
     &Aura::HandleNoImmediateEffect,                         //224 SPELL_AURA_MOD_BLOCKED_DAMAGE_PERCENT_TAKEN
 };
@@ -5782,6 +5782,34 @@ void Aura::HandleAuraModRangedAttackPowerPercent(bool apply, bool /*Real*/)
     GetTarget()->HandleAttackPowerModifier(RANGED_AP_MODS, AP_MOD_PCT, m_modifier.m_amount, apply);
 }
 
+void Aura::HandleAuraModAttackPowerOfPartyFlat(bool apply, bool /*Real*/)
+{
+    if (apply)
+    {
+        if (Unit* caster = GetCaster())
+            if (Player* modOwner = caster->GetSpellModOwner())
+                modOwner->ApplySpellMod(GetSpellProto()->Id, SPELLMOD_ATTACK_POWER, m_modifier.m_amount);
+    }
+
+    // Applies flat attack power to BOTH melee and ranged (party aura)
+    GetTarget()->HandleAttackPowerModifier(MELEE_AP_MODS, IsPositive() ? AP_MOD_POSITIVE_FLAT : AP_MOD_NEGATIVE_FLAT, m_modifier.m_amount, apply);
+    GetTarget()->HandleAttackPowerModifier(RANGED_AP_MODS, IsPositive() ? AP_MOD_POSITIVE_FLAT : AP_MOD_NEGATIVE_FLAT, m_modifier.m_amount, apply);
+}
+
+void Aura::HandleAuraModAttackPowerOfPartyPct(bool apply, bool /*Real*/)
+{
+    if (apply)
+    {
+        if (Unit* caster = GetCaster())
+            if (Player* modOwner = caster->GetSpellModOwner())
+                modOwner->ApplySpellMod(GetSpellProto()->Id, SPELLMOD_ATTACK_POWER, m_modifier.m_amount);
+    }
+
+    // Applies percent attack power to BOTH melee and ranged (party aura)
+    GetTarget()->HandleAttackPowerModifier(MELEE_AP_MODS, AP_MOD_PCT, m_modifier.m_amount, apply);
+    GetTarget()->HandleAttackPowerModifier(RANGED_AP_MODS, AP_MOD_PCT, m_modifier.m_amount, apply);
+}
+
 /********************************/
 /***        DAMAGE BONUS      ***/
 /********************************/
@@ -9129,8 +9157,10 @@ bool _IsExclusiveSpellAura(SpellEntry const* spellproto, SpellEffectIndex eff, A
         case SPELL_AURA_MOD_DAMAGE_DONE:                                // Demonic Pact
         case SPELL_AURA_MOD_ATTACK_POWER_PCT:                           // Abomination's Might / Unleashed Rage
         case SPELL_AURA_MOD_RANGED_ATTACK_POWER_PCT:
+        case SPELL_AURA_MOD_ATTACK_POWER_OF_PARTY_PCT:                  // Trueshot Aura
         case SPELL_AURA_MOD_ATTACK_POWER:                               // (Greater) Blessing of Might / Battle Shout
         case SPELL_AURA_MOD_RANGED_ATTACK_POWER:
+        case SPELL_AURA_MOD_ATTACK_POWER_OF_PARTY_FLAT:                 // Trueshot Aura
         case SPELL_AURA_MOD_POWER_REGEN:                                // (Greater) Blessing of Wisdom
         case SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN:                       // Glyph of Salvation / Pain Suppression / Safeguard ?
         case SPELL_AURA_MOD_STAT:
