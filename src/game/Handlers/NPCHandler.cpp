@@ -476,34 +476,34 @@ void WorldSession::SendSpiritResurrect()
 
     _player->DurabilityLossAll(0.25f, true);
 
-    // get corpse nearest graveyard
+    // Use BG-specific graveyard logic when in a battleground,
+    // otherwise look up nearest graveyard via corpse/ghost position
     WorldSafeLocsEntry const *corpseGrave = nullptr;
-    Corpse *corpse = _player->GetCorpse();
-    if (corpse)
-        corpseGrave = sObjectMgr.GetClosestGraveYard(
-                          corpse->GetPositionX(), corpse->GetPositionY(), corpse->GetPositionZ(), corpse->GetMapId(), _player->GetTeam());
+
+    if (BattleGround *bg = _player->GetBattleGround())
+    {
+        corpseGrave = bg->GetClosestGraveYard(_player);
+    }
+    else
+    {
+        Corpse *corpse = _player->GetCorpse();
+        if (corpse)
+            corpseGrave = sObjectMgr.GetClosestGraveYard(
+                              corpse->GetPositionX(), corpse->GetPositionY(), corpse->GetPositionZ(), corpse->GetMapId(), _player->GetTeam());
+    }
 
     // now can spawn bones
     _player->SpawnCorpseBones();
 
-    // teleport to nearest from corpse graveyard, if different from nearest to player ghost
+    // teleport to nearest graveyard
     if (corpseGrave)
     {
-        WorldSafeLocsEntry const *ghostGrave = sObjectMgr.GetClosestGraveYard(_player->GetPositionX(), _player->GetPositionY(), _player->GetPositionZ(), _player->GetMapId(), _player->GetTeam());
-
         float orientation = _player->GetOrientation();
 
         if (float facing = sObjectMgr.GetWorldSafeLocFacing(corpseGrave->ID))
             orientation = facing;
 
-        if (corpseGrave != ghostGrave)
-            _player->TeleportTo(corpseGrave->map_id, corpseGrave->x, corpseGrave->y, corpseGrave->z, orientation);
-        // or update at original position
-        else
-        {
-            _player->GetCamera().UpdateVisibilityForOwner();
-            _player->UpdateObjectVisibility();
-        }
+        _player->TeleportTo(corpseGrave->map_id, corpseGrave->x, corpseGrave->y, corpseGrave->z, orientation);
     }
     // or update at original position
     else
