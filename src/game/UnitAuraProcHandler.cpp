@@ -1193,44 +1193,75 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, int3
                         return SPELL_AURA_PROC_OK;
                     }
 
-                    // Part 2: Ferocious Bite → chance to refresh Rake/Rip and add combo point
+                    // ──────────────────────────────────────────────────────────────
+                    // Part 2: Ferocious Bite → refresh Rake/Rip DOTs + extra CP
+                    // Enhanced v2 with: diagnostic logging, CP fallback, spell-ID matching
+                    // ──────────────────────────────────────────────────────────────
                     if (procSpell->IsFitToFamilyMask<CF_DRUID_RIP_BITE>() &&
                         procSpell->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_SCHOOL_DAMAGE)
                     {
+                        sLog.outDebug("[Carnage] >>> Enter FB branch, spellId = %u", procSpell->Id);
+
                         Player* plr = ToPlayer();
                         if (!plr)
+                        {
+                            sLog.outDebug("[Carnage] Failed: not player");
                             return SPELL_AURA_PROC_FAILED;
+                        }
 
-                        // Get the chance per combo point from EffectPointsPerComboPoint[1]
-                        // Turtle-WoW DBC stores per-CP data at effect index 1 (column effectPointsPerComboPoint2)
-                        float chancePerCp = dummySpell->EffectPointsPerComboPoint[EFFECT_INDEX_1];
-                        if (chancePerCp <= 0.0f)
-                            return SPELL_AURA_PROC_FAILED;
+                        // ── Enhanced CP retrieval with multi-source fallback ──
+                        // Turtle-WoW may clear player CP before proc fires (timing race)
+                        uint8 cpPlayer = plr->GetComboPoints();
+                        uint8 cpTarget = pVictim->GetComboPointsFrom(plr->GetGUID());
+                        sLog.outDebug("[Carnage] CP: player=%u, target=%u", cpPlayer, cpTarget);
 
-                        uint8 cp = plr->GetComboPoints();
+                        uint8 cp = 0;
+                        if (cpTarget > 0)
+                            cp = cpTarget;                                  // 目标端CP最稳定
+                        else if (cpPlayer > 0)
+                            cp = cpPlayer;                                  // 玩家端CP兜底
+                        else
+                            cp = 1;                                         // 保底:FB至少1CP才能施放
+
                         if (cp == 0)
+                        {
+                            sLog.outDebug("[Carnage] Failed: CP is 0 (both player and target)");
                             return SPELL_AURA_PROC_FAILED;
+                        }
 
-                        // Roll chance for each combo point (once per CP)
+                        // ── Read per-CP probability from EffectPointsPerComboPoint[1] ──
+                        // Turtle-WoW stores per-CP data at effect index 1 (col effectPointsPerComboPoint2)
+                        float chancePerCp = dummySpell->EffectPointsPerComboPoint[EFFECT_INDEX_1];
+                        sLog.outDebug("[Carnage] chancePerCp = %.2f, total roll times = %u", chancePerCp, cp);
+                        if (chancePerCp <= 0.0f)
+                        {
+                            sLog.outDebug("[Carnage] Failed: chancePerCp <= 0 (check DB effectPointsPerComboPoint2)");
+                            return SPELL_AURA_PROC_FAILED;
+                        }
+
+                        // ── Roll chance for each combo point ──
                         bool refresh = false;
                         for (uint8 i = 0; i < cp; ++i)
                         {
                             if (roll_chance_f(chancePerCp))
                             {
                                 refresh = true;
+                                sLog.outDebug("[Carnage] Roll success at attempt %u/%u", i + 1, cp);
                                 break;
                             }
                         }
-
                         if (!refresh)
+                        {
+                            sLog.outDebug("[Carnage] Failed: all %u rolls missed", cp);
                             return SPELL_AURA_PROC_FAILED;
+                        }
 
-                        // Refresh Rake and Rip auras on the target
+                        // ── Scan target DOT auras and refresh ──
+                        int32 matchedCount = 0, refreshedCount = 0;
                         Unit::SpellAuraHolderMap const& holderMap = pVictim->GetSpellAuraHolderMap();
                         for (auto itr = holderMap.begin(); itr != holderMap.end(); ++itr)
                         {
                             SpellAuraHolder* holder = itr->second;
-                            // Only refresh auras cast by this unit (avoid interfering with other druids)
                             if (holder->GetCaster() != this)
                                 continue;
 
@@ -1238,29 +1269,57 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, int3
                             if (!auraProto || auraProto->SpellFamilyName != SPELLFAMILY_DRUID)
                                 continue;
 
-                            // Rake (CF_DRUID_RAKE_CLAW) — refresh each periodic damage effect
-                            if (auraProto->IsFitToFamilyMask<CF_DRUID_RAKE_CLAW>())
+                            uint32 auraId = auraProto->Id;
+
+                            // Spell-ID based matching (bypasses mask definition inconsistencies)
+                            // Rake 全等级
+                            bool isRake = (auraId == 1822 || auraId == 1823 || auraId == 1824 ||
+                                           auraId == 9904 || auraId == 24331 || auraId == 24332 ||
+                                           auraId == 27556 || auraId == 27638);
+                            // Rip 全等级
+                            bool isRip = (auraId == 1079 || auraId == 9492 || auraId == 9493 ||
+                                          auraId == 9752 || auraId == 9894 || auraId == 9896);
+
+                            if (isRake)
                             {
+                                matchedCount++;
                                 for (uint8 effIdx = 0; effIdx < MAX_SPELL_EFFECTS; ++effIdx)
                                 {
                                     if (auraProto->EffectApplyAuraName[effIdx] == SPELL_AURA_PERIODIC_DAMAGE)
                                     {
                                         if (Aura* periodicAura = holder->GetAuraByEffectIndex(SpellEffectIndex(effIdx)))
+                                        {
                                             periodicAura->Refresh(this, pVictim, holder);
+                                            refreshedCount++;
+                                        }
                                     }
                                 }
                             }
-                            // Rip (CF_DRUID_RIP_BITE) — periodic damage at Effect[0]
-                            else if (auraProto->IsFitToFamilyMask<CF_DRUID_RIP_BITE>() &&
-                                     auraProto->EffectApplyAuraName[EFFECT_INDEX_0] == SPELL_AURA_PERIODIC_DAMAGE)
+                            else if (isRip)
                             {
-                                if (Aura* ripAura = holder->GetAuraByEffectIndex(EFFECT_INDEX_0))
-                                    ripAura->Refresh(this, pVictim, holder);
+                                matchedCount++;
+                                for (uint8 effIdx = 0; effIdx < MAX_SPELL_EFFECTS; ++effIdx)
+                                {
+                                    if (auraProto->EffectApplyAuraName[effIdx] == SPELL_AURA_PERIODIC_DAMAGE)
+                                    {
+                                        if (Aura* ripAura = holder->GetAuraByEffectIndex(SpellEffectIndex(effIdx)))
+                                        {
+                                            ripAura->Refresh(this, pVictim, holder);
+                                            refreshedCount++;
+                                        }
+                                    }
+                                }
                             }
                         }
 
-                        // Add one extra combo point (capped at max)
+                        sLog.outDebug("[Carnage] Refresh result: matchedDOTs=%d, refreshed=%d",
+                            matchedCount, refreshedCount);
+                        if (matchedCount > 0 && refreshedCount == 0)
+                            sLog.outDebug("[Carnage] WARNING: DOTs matched but Refresh did not apply (check Aura::Refresh implementation)");
+
+                        // Extra combo point (capped at max)
                         plr->AddComboPoints(pVictim, 1);
+                        sLog.outDebug("[Carnage] Added 1 CP (via proc), now CP = %u", plr->GetComboPoints());
                         return SPELL_AURA_PROC_OK;
                     }
 
