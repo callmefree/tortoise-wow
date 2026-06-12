@@ -4693,9 +4693,10 @@ void Player::_LoadPlayerSavedSpecs(QueryResult* result)
         for (auto j : vTreeTalents)
             talentsSpent += j;
 
-        if (talentsSpent > 0 && talentsSpent < CalculateTalentsPoints() && (GetLevel() == PLAYER_MAX_LEVEL))
+        // Only reset if saved spec has MORE points than the player can have at this level (corruption)
+        if (talentsSpent > CalculateTalentsPoints())
         {
-            CharacterDatabase.PExecute("DELETE FROM `character_spell_dual_spec` WHERE `guid`=%u && `spec`=%u", GetGUIDLow(), i);
+            CharacterDatabase.PExecute("DELETE FROM `character_spell_dual_spec` WHERE `guid`=%u && `spec`=%u", GetGUIDLow(), uint32(i + 1));
             m_savedSpecSpells[i].clear();
             m_Events.AddLambdaEventAtOffset([pPlayer = this]()
                 {
@@ -24959,6 +24960,9 @@ bool Player::HasSavedTalentSpec(const std::uint8_t uiPrimaryOrSecondary)
 
 void Player::CountTalentsSpentInSavedSpec(uint32 specIndex, std::vector<uint32>& vTreeTalents)
 {
+    // Track the highest rank index per unique TalentID (one talent = one entry in Talent.dbc)
+    std::map<uint32, std::pair<uint8, uint32>> talentMaxRank; // TalentID -> (highest J, tabpage)
+
     for (uint32 spellId : m_savedSpecSpells[specIndex])
     {
         const uint32 uiSavedTalentID{ spellId };
@@ -24980,10 +24984,25 @@ void Player::CountTalentsSpentInSavedSpec(uint32 specIndex, std::vector<uint32>&
             {
                 if (talentInfo->RankID[j] && talentInfo->RankID[j] == uiSavedTalentID)
                 {
-                    vTreeTalents[talentTabInfo->tabpage] += (j + 1);
+                    auto& entry = talentMaxRank[talentInfo->TalentID];
+                    if (j >= entry.first)
+                    {
+                        entry.first = j;
+                        entry.second = talentTabInfo->tabpage;
+                    }
                 }
             }
         }
+    }
+
+    // Sum up points — only the highest rank per talent, so a 3-rank talent counts as 3 not 6
+    for (auto& pair : talentMaxRank)
+    {
+        uint8 maxJ = pair.second.first;
+        uint32 tabpage = pair.second.second;
+
+        if (tabpage < vTreeTalents.size())
+            vTreeTalents[tabpage] += (maxJ + 1);
     }
 }
 
