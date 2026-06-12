@@ -1245,7 +1245,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, int3
                                 {
                                     if (auraProto->EffectApplyAuraName[effIdx] == SPELL_AURA_PERIODIC_DAMAGE)
                                     {
-                                        if (Aura* periodicAura = holder->GetAuraByEffectIndex(effIdx))
+                                        if (Aura* periodicAura = holder->GetAuraByEffectIndex(SpellEffectIndex(effIdx)))
                                             periodicAura->Refresh(this, pVictim, holder);
                                     }
                                 }
