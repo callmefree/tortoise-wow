@@ -1229,17 +1229,34 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, int3
                         Unit::SpellAuraHolderMap const& holderMap = pVictim->GetSpellAuraHolderMap();
                         for (auto itr = holderMap.begin(); itr != holderMap.end(); ++itr)
                         {
-                            SpellEntry const* auraProto = itr->second->GetSpellProto();
+                            SpellAuraHolder* holder = itr->second;
+                            // Only refresh auras cast by this unit (avoid interfering with other druids)
+                            if (holder->GetCaster() != this)
+                                continue;
+
+                            SpellEntry const* auraProto = holder->GetSpellProto();
                             if (!auraProto || auraProto->SpellFamilyName != SPELLFAMILY_DRUID)
                                 continue;
 
-                            // Rake uses CF_DRUID_RAKE_CLAW
+                            // Rake (CF_DRUID_RAKE_CLAW) — refresh each periodic damage effect
                             if (auraProto->IsFitToFamilyMask<CF_DRUID_RAKE_CLAW>())
-                                itr->second->RefreshHolder();
-                            // Rip uses CF_DRUID_RIP_BITE + periodic damage aura
+                            {
+                                for (uint8 effIdx = 0; effIdx < MAX_SPELL_EFFECTS; ++effIdx)
+                                {
+                                    if (auraProto->EffectApplyAuraName[effIdx] == SPELL_AURA_PERIODIC_DAMAGE)
+                                    {
+                                        if (Aura* periodicAura = holder->GetAuraByEffectIndex(effIdx))
+                                            periodicAura->Refresh(this, pVictim, holder);
+                                    }
+                                }
+                            }
+                            // Rip (CF_DRUID_RIP_BITE) — periodic damage at Effect[0]
                             else if (auraProto->IsFitToFamilyMask<CF_DRUID_RIP_BITE>() &&
                                      auraProto->EffectApplyAuraName[EFFECT_INDEX_0] == SPELL_AURA_PERIODIC_DAMAGE)
-                                itr->second->RefreshHolder();
+                            {
+                                if (Aura* ripAura = holder->GetAuraByEffectIndex(EFFECT_INDEX_0))
+                                    ripAura->Refresh(this, pVictim, holder);
+                            }
                         }
 
                         // Add one extra combo point (capped at max)
