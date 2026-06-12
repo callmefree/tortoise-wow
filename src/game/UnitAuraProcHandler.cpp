@@ -1199,8 +1199,9 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, int3
                         if (!plr)
                             return SPELL_AURA_PROC_FAILED;
 
-                        // Get the chance per combo point from EffectPointsPerComboPoint[2]
-                        float chancePerCp = dummySpell->EffectPointsPerComboPoint[EFFECT_INDEX_2];
+                        // Get the chance per combo point from EffectPointsPerComboPoint[1]
+                        // Turtle-WoW DBC stores per-CP data at effect index 1 (column effectPointsPerComboPoint2)
+                        float chancePerCp = dummySpell->EffectPointsPerComboPoint[EFFECT_INDEX_1];
                         if (chancePerCp <= 0.0f)
                             return SPELL_AURA_PROC_FAILED;
 
