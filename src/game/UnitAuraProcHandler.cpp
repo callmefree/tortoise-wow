@@ -1209,24 +1209,19 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, int3
                             return SPELL_AURA_PROC_FAILED;
                         }
 
-                        // ── Enhanced CP retrieval with multi-source fallback ──
-                        // Turtle-WoW may clear player CP before proc fires (timing race)
-                        uint8 cpPlayer = plr->GetComboPoints();
-                        uint8 cpTarget = pVictim->GetComboPointsFrom(plr->GetGUID());
-                        sLog.outDebug("[Carnage] CP: player=%u, target=%u", cpPlayer, cpTarget);
-
-                        uint8 cp = 0;
-                        if (cpTarget > 0)
-                            cp = cpTarget;                                  // 目标端CP最稳定
-                        else if (cpPlayer > 0)
-                            cp = cpPlayer;                                  // 玩家端CP兜底
-                        else
-                            cp = 1;                                         // 保底:FB至少1CP才能施放
+                        // ── CP retrieval ──
+                        // Turtle-WoW (MaNGOS) stores combo points only on the Player,
+                        // cleared at Spell::cast finish state (after proc fires during hit phase).
+                        // pVictim->GetComboPointsFrom(guid) does NOT exist in this codebase.
+                        uint8 cp = plr->GetComboPoints();
+                        sLog.outDebug("[Carnage] CP from player = %u", cp);
 
                         if (cp == 0)
                         {
-                            sLog.outDebug("[Carnage] Failed: CP is 0 (both player and target)");
-                            return SPELL_AURA_PROC_FAILED;
+                            // Safety fallback: FB requires >=1 CP to cast, so if CPs are 0 here
+                            // it likely means they were consumed between proc fire and this handler.
+                            cp = 1;
+                            sLog.outDebug("[Carnage] CP was 0, using fallback=1");
                         }
 
                         // ── Read per-CP probability from EffectPointsPerComboPoint[1] ──
