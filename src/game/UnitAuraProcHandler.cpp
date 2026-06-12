@@ -1182,7 +1182,9 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, int3
                         if (damage <= 0)
                             return SPELL_AURA_PROC_FAILED;
 
-                        int32 healAmount = int32(damage * (triggerAmount + 1) / 100);
+                        // triggerAmount is always 0 for DUMMY auras in MaNGOS (not filled by the engine)
+                        // Read directly from spell template's EffectBasePoints instead
+                        int32 healAmount = int32(damage * (dummySpell->EffectBasePoints[EFFECT_INDEX_0] + 1) / 100);
                         if (healAmount <= 0)
                             return SPELL_AURA_PROC_FAILED;
 
