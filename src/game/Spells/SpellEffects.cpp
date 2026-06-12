@@ -6983,13 +6983,16 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     if (!caster || !caster->IsPlayer() || caster->GetClass() != CLASS_HUNTER)
                         break;
 
-                    Pet* pet = ((Player*)caster)->GetPet();
+                    Player* playerCaster = static_cast<Player*>(caster);
+                    Pet* pet = playerCaster->GetPet();
                     if (!pet || !pet->IsAlive())
                         break;
 
-                    // 从猎人侧获取当前敌对目标
-                    Unit* target = caster->GetVictim();
+                    // 从猎人侧获取目标：优先选中目标，兜底仇恨目标
+                    Unit* target = playerCaster->GetSelectedUnit();
                     if (!target || !target->IsAlive())
+                        target = caster->GetVictim();
+                    if (!target || !target->IsAlive() || !caster->IsValidAttackTarget(target))
                         break;
 
                     // 计算宠物近战AP的80%作为基础伤害
