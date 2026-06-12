@@ -9471,8 +9471,8 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* pTarget, uint32 procFlag, 
                     ModifyAuraState(AURA_STATE_TARGET_DODGED, true);
                     StartReactiveTimer(REACTIVE_ROGUE_DODGE, pTarget->GetObjectGuid());
                 }
-                // Hunter Kill Command on critical hit
-                if (procExtra & PROC_EX_CRITICAL_HIT && IsPlayer() && GetClass() == CLASS_HUNTER && attType == RANGED_ATTACK)
+                // Hunter Kill Command on any critical hit (melee + ranged)
+                if (procExtra & PROC_EX_CRITICAL_HIT && IsPlayer() && GetClass() == CLASS_HUNTER)
                 {
                     ModifyAuraState(AURA_STATE_HUNTER_KILL_COMMAND, true);
                     StartReactiveTimer(REACTIVE_HUNTER_KILL_COMMAND, pTarget->GetObjectGuid());
