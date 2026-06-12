@@ -1576,6 +1576,13 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
                 if (!playerCaster)
                     return SPELL_AURA_PROC_FAILED;
 
+                // Prevent multi-target AoE from triggering mana consumption multiple times
+                // by checking the same cooldown key (trigger_spell_id = 51977) that the generic
+                // mechanism uses at the end of this function. This check MUST be placed before
+                // the mana cost to avoid wasting mana on procs that will be blocked downstream.
+                if (cooldown && HasSpellCooldown(trigger_spell_id))
+                    return SPELL_AURA_PROC_FAILED;
+
                 uint32 baseMana = playerCaster->GetCreateMana();
                 uint32 manaCost = baseMana ? uint32(baseMana * 2 / 100) : 0;
                 if (manaCost && playerCaster->GetPower(POWER_MANA) < manaCost)
