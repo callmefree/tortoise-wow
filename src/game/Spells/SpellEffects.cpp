@@ -6979,7 +6979,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
             {
                 case 41827: // 杀戮命令 Kill Command
                 {
-                    Unit* caster = m_caster;
+                    Unit* caster = dynamic_cast<Unit*>(m_caster);
                     if (!caster || !caster->IsPlayer() || caster->GetClass() != CLASS_HUNTER)
                         break;
 
