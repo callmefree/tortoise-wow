@@ -1565,6 +1565,13 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
                 trigger_spell_id = 26470;
             }
             // Arcane Instability (15058-15060): duplicate arcane damage at a reduced rate and consume base mana
+            //
+            // 方案A（前置冷却 + 本地施法截断）：
+            // 1) 施法前立刻挂载冷却，阻断同轮AOE多目标递归嵌套重复扣蓝
+            // 2) 本地走完施法流程后直接 return，不落入外层通用流程
+            // 3) 冷却 API 使用 AddSpellCooldown(id, 0, time(nullptr) + cooldown)，
+            //    与整个冷却子系统保持一致（HasSpellCooldown/GetSpellCooldownDelay
+            //    内部均使用 time(nullptr) 比对），无时间戳差异问题。
             else if (auraSpellInfo->Id >= 15058 && auraSpellInfo->Id <= 15060)
             {
                 if (!procSpell || !(procSpell->GetSpellSchoolMask() & SPELL_SCHOOL_MASK_ARCANE))
@@ -1577,29 +1584,34 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit* pVictim, uint32 d
                 if (!playerCaster)
                     return SPELL_AURA_PROC_FAILED;
 
-                // Internal cooldown to prevent AoE multitarget and rapid repeat triggers
-                if (cooldown)
-                {
-                    uint32 const spellId = auraSpellInfo->Id + UINT16_MAX;
-                    if (HasSpellCooldown(spellId))
-                        return SPELL_AURA_PROC_FAILED;
-                    AddSpellCooldown(spellId, 0, time(nullptr) + cooldown);
-                }
+                const uint32 arcane_trigger_spell = 51977;
+                // 前置冷却校验，拦截后续重复触发
+                if (cooldown && HasSpellCooldown(arcane_trigger_spell))
+                    return SPELL_AURA_PROC_FAILED;
 
                 uint32 baseMana = playerCaster->GetCreateMana();
                 uint32 manaCost = baseMana ? uint32(baseMana * 2 / 100) : 0;
                 if (manaCost && playerCaster->GetPower(POWER_MANA) < manaCost)
                     return SPELL_AURA_PROC_FAILED;
 
-                // Use the aura’s amount as percent (effectBasePoints1 + 1).
-                int32 bonusDamage = std::max(1u, triggerAmount * damage / 100);
+                // 关键：施法前立刻挂载冷却，阻断递归/多目标二次进入
+                // HasSpellCooldown 内部使用 time(nullptr) 比对 endTime，
+                // 因此 AddSpellCooldown 的 endTime 也使用 time(nullptr) + cooldown，
+                // 保持全冷却系统一致性。
+                if (cooldown)
+                    AddSpellCooldown(arcane_trigger_spell, 0, time(nullptr) + cooldown);
 
-                trigger_spell_id = auraSpellInfo->EffectTriggerSpell[triggeredByAura->GetEffIndex()];
-                basepoints[0] = bonusDamage;
-                target = pVictim;
-
+                // 单次唯一扣蓝
                 if (manaCost)
-                    playerCaster->ModifyPower(POWER_MANA, -int32(manaCost));
+                    playerCaster->ModifyPower(POWER_MANA, -static_cast<int32>(manaCost));
+
+                // 本地独立施放触发法术，不再透出外层通用逻辑
+                int32 bonusDamage = std::max(1u, triggerAmount * damage / 100);
+                pCaster->CastCustomSpell(pVictim, arcane_trigger_spell,
+                    &bonusDamage, nullptr, nullptr, true, castItem, triggeredByAura);
+
+                // 直接返回，截断外层后续CD校验、施法、重复设置CD流程
+                return SPELL_AURA_PROC_OK;
             }
             break;
         case SPELLFAMILY_WARRIOR:
