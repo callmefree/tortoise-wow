@@ -709,8 +709,7 @@ void RandomPlayerbotFactory::CreateRandomBots()
     int totalAccCount = sPlayerbotAIConfig.randomBotAccountCount;
     sLog.outString("Creating random bot accounts...");
 
-    std::vector<std::future<void>> account_creations;
-
+    uint32 accountsCreated = 0;
     BarGoLink bar(totalAccCount);
     for (uint32 accountNumber = 0; accountNumber < sPlayerbotAIConfig.randomBotAccountCount; ++accountNumber)
     {
@@ -733,22 +732,26 @@ void RandomPlayerbotFactory::CreateRandomBots()
         else
             password = accountName;
 
+        // Fix: 同步创建账号而非异步，确保创建成功且返回值被检查
+        // 异步创建会导致失败静默吞掉（.wait() 不传播异常），账号列表为空
 #ifndef MANGOSBOT_ZERO
         uint8 max_expansion = MAX_EXPANSION;
-        account_creations.push_back(std::async([accountName, password, max_expansion] {sAccountMgr.CreateAccount(accountName, password, max_expansion); }));
+        AccountOpResult result = sAccountMgr.CreateAccount(accountName, password, max_expansion);
 #else
-        account_creations.push_back(std::async([accountName, password] {sAccountMgr.CreateAccount(accountName, password); }));
+        AccountOpResult result = sAccountMgr.CreateAccount(accountName, password);
 #endif
 
-        sLog.outDebug("Account %s created for random bots", accountName.c_str());
-        bar.step();
-    }
+        if (result == AOR_OK)
+        {
+            accountsCreated++;
+            sLog.outDebug("Account %s created for random bots", accountName.c_str());
+        }
+        else
+        {
+            sLog.outError("Failed to create account %s (result=%d)", accountName.c_str(), (int)result);
+        }
 
-    BarGoLink bar3(account_creations.size());
-    for (uint32 i = 0; i < account_creations.size(); i++)
-    {
-        bar3.step();
-        account_creations[i].wait();
+        bar.step();
     }
 
     //LoginDatabase.PExecute("UPDATE account SET expansion = '%u' where username like '%s%%'", 2, sPlayerbotAIConfig.randomBotAccountPrefix.c_str());

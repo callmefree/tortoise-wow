@@ -698,7 +698,11 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed, bool minimal)
 
         if (logInAllowed)
         {
+            uint32 prevBotCount = currentBots.size();
             AddRandomBots();
+            // Fix: 如果一趟扫描都没找到新机器人，说明账号池已耗尽，拉长扫描间隔避免空转
+            if (currentBots.size() <= prevBotCount && currentBots.empty())
+                SetAIInternalUpdateDelay(sPlayerbotAIConfig.randomBotUpdateInterval * 10);
         }
     }
 
@@ -1127,7 +1131,15 @@ uint32 RandomPlayerbotMgr::AddRandomBots()
 
     if(sPlayerbotAIConfig.asyncBotLogin)
         return 0;
-  
+
+    // Fix: 空账号列表直接返回，防止 Update 循环无限空转
+    if (sPlayerbotAIConfig.randomBotAccounts.empty())
+    {
+        sLog.outError("PLAYERBOT: No random bot accounts configured or created. "
+                      "Check AiPlayerbot.RandomBotAccountPrefix and AiPlayerbot.RandomBotAutoCreate.");
+        return 0;
+    }
+
     if (currentBots.size() < currentAllowedBotCount)
     {
         if (sPlayerbotAIConfig.syncLevelWithPlayers)
