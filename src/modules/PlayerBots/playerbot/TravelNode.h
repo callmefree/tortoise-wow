@@ -311,14 +311,40 @@ namespace ai
     {
     public:
         TravelNodeRoute() {}
-        TravelNodeRoute(std::vector<TravelNode*> nodes1, std::vector<TravelNode*> tempNodes) { nodes = nodes1; if (tempNodes.size()) addTempNodes(tempNodes); }
+        TravelNodeRoute(std::vector<TravelNode*> nodes1, std::vector<TravelNode*> tempNodes)
+            : nodes(std::move(nodes1))
+        {
+            if (tempNodes.size()) addTempNodes(tempNodes);
+        }
+
+        // RAII: temp nodes are automatically cleaned on destruction
+        ~TravelNodeRoute() { cleanTempNodes(); }
+
+        // No copying — raw pointer sharing across copies leads to double-free
+        TravelNodeRoute(const TravelNodeRoute&) = delete;
+        TravelNodeRoute& operator=(const TravelNodeRoute&) = delete;
+
+        // Move semantics transfer ownership of temp nodes
+        TravelNodeRoute(TravelNodeRoute&& other) noexcept
+            : nodes(std::move(other.nodes)), tempNodes(std::move(other.tempNodes)) {}
+        TravelNodeRoute& operator=(TravelNodeRoute&& other) noexcept
+        {
+            if (this != &other)
+            {
+                // Free current temp nodes before taking ownership of new ones
+                cleanTempNodes();
+                nodes = std::move(other.nodes);
+                tempNodes = std::move(other.tempNodes);
+            }
+            return *this;
+        }
 
         bool isEmpty() { return nodes.empty(); }
 
         bool hasNode(TravelNode* node) { return findNode(node) != nodes.end(); }
         float getTotalDistance();
 
-        void setNodes(std::vector<TravelNode*> nodes1) { nodes = nodes1; }
+        void setNodes(std::vector<TravelNode*> nodes1) { nodes = std::move(nodes1); }
         std::vector<TravelNode*>& getNodes() { return nodes; }
 
         void addTempNodes(std::vector<TravelNode*> nodes) { tempNodes.insert(tempNodes.end(), nodes.begin(), nodes.end()); }

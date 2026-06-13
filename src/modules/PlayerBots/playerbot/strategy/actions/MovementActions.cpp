@@ -1477,7 +1477,7 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool idle, 
                     if (!routeList.empty())
                         ai->TellPlayerNoFacing(GetMaster(), routeList);
 
-                    route.cleanTempNodes();
+                    // route's temp nodes are cleaned automatically by ~TravelNodeRoute()
 
                     sTravelNodeMap.m_nMapMtx.unlock_shared();
                 }

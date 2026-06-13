@@ -1870,10 +1870,12 @@ TravelNodeRoute TravelNodeMap::getRoute(WorldPosition startPos, WorldPosition en
             for (auto& endNode : endNodes)
             {
                 TravelNodeRoute route = getRoute(botNode, endNode, bot);
-                route.addTempNodes({botNode});
 
                 if (!route.isEmpty())
                 {
+                    // Transfer botNode ownership to this route before returning
+                    route.addTempNodes({botNode});
+
                     std::vector<WorldPosition> routePoints;
                     for (auto& p : route.getNodes())
                         routePoints.push_back(*p->getPosition());
@@ -1881,6 +1883,9 @@ TravelNodeRoute TravelNodeMap::getRoute(WorldPosition startPos, WorldPosition en
                     return route;
                 }
             }
+
+            // No valid route found — botNode must be freed manually
+            delete botNode;
         }
     }
 
@@ -1908,13 +1913,11 @@ TravelPath TravelNodeMap::getFullPath(WorldPosition startPos, WorldPosition endP
 
     if (route.isEmpty())
     {
-        route.cleanTempNodes();
         return movePath;
     }
 
     movePath = route.buildPath(beginPath, endPath);
-
-    route.cleanTempNodes();
+    // route's temp nodes are cleaned automatically by ~TravelNodeRoute()
 
     sTravelNodeMap.m_nMapMtx.unlock_shared();
 
