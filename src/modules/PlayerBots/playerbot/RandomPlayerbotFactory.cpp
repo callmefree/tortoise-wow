@@ -969,7 +969,7 @@ void RandomPlayerbotFactory::CreateRandomBots()
         return;
     }
 
-    std::vector<std::future<void>> bot_creations;
+    std::vector<std::future<void>> account_creations;
 
     BarGoLink bar2(sObjectAccessor.GetPlayers().size());
     for (auto pl : sObjectAccessor.GetPlayers())
