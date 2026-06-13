@@ -381,9 +381,9 @@ bool RandomPlayerbotFactory::CreateRandomBot(uint8 cls, uint8 inputRace)
 
     player->setCinematic(2);
     player->SetAtLoginFlag(AT_LOGIN_NONE);
-    //player->SetSemaphoreTeleportFar(true); //Fake teleport to delay sql save
-    //player->SaveToDB();
-    //player->SetSemaphoreTeleportFar(false);
+    player->SetSemaphoreTeleportFar(true); //Fake teleport to delay sql save
+    player->SaveToDB();
+    player->SetSemaphoreTeleportFar(false);
 
     sObjectAccessor.AddObject(player);
 
