@@ -680,7 +680,14 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed, bool minimal)
     uint32 availableBotCount = availableBots.size();
     uint32 onlineBotCount = GetPlayerbotsAmount();
     
-    SetAIInternalUpdateDelay(sPlayerbotAIConfig.randomBotUpdateInterval);
+    // Fix: 无可用机器人时（randomBotAccounts 为空 / 数据库无角色），
+    // 将更新间隔延长到 10 倍，避免每 1 秒空转扫描。
+    // 注意：此条件必须在后面的 SetAIInternalUpdateDelay 之前判断，
+    // 否则每次 tick 都会被重置为短间隔。
+    if (sPlayerbotAIConfig.randomBotAccounts.empty() || availableBotCount == 0)
+        SetAIInternalUpdateDelay(sPlayerbotAIConfig.randomBotUpdateInterval * 10);
+    else
+        SetAIInternalUpdateDelay(sPlayerbotAIConfig.randomBotUpdateInterval);
 
     auto pmo = sPerformanceMonitor.start(PERF_MON_RNDBOT,
         onlineBotCount < maxAllowedBotCount ? "RandomPlayerbotMgr::Login" : "RandomPlayerbotMgr::UpdateAIInternal");
@@ -698,11 +705,9 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed, bool minimal)
 
         if (logInAllowed)
         {
-            uint32 prevBotCount = currentBots.size();
+            // 注意：AddRandomBots 内部已对 randomBotAccounts.empty() 做早期返回，
+            // 这里不再需要额外的频率控制（已在上方处理）
             AddRandomBots();
-            // Fix: 如果一趟扫描都没找到新机器人，说明账号池已耗尽，拉长扫描间隔避免空转
-            if (currentBots.size() <= prevBotCount && currentBots.empty())
-                SetAIInternalUpdateDelay(sPlayerbotAIConfig.randomBotUpdateInterval * 10);
         }
     }
 
